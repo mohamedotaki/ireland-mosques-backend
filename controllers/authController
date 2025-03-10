@@ -1,0 +1,445 @@
+/* const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+const blackList = require("../models/BlackList");
+const jwt = require("jsonwebtoken");
+const axios = require("axios");
+const { validationResult } = require("express-validator");
+const User = require("../models/Users");
+const jwtSecretKey = process.env.key || "1234qsfg";
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "1Sfr%3£%^GDhr5";
+const CLIENT_ID =
+  process.env.CLIENT_ID ||
+  "a30eb717-3997-cfb0-3056-99c66ea8266b/f7401306-a1d2-4a3a-8495-4b2bbcb7c253";
+const CLIENT_SECRET = process.env.CLIENT_SECRET || "q<_TL)<wS{_TmPEqcs2n";
+const REDIRECT_URI =
+  process.env.REDIRECT_URI || "http://localhost:3001/api/auth/sageCallback";
+const APP_HOME_PAGE = process.env.APP_HOME_PAGE || "http://localhost:3000";
+
+exports.register = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { userToAdd, user } = req.body;
+  const admin = await User.getUserByUsername(user.username);
+  if (!user || user.userType !== "Admin") {
+    return res.status(401).json({ message: "Unauthorised" });
+  }
+  // Validate password
+  const passwordMatch = await bcrypt.compare(
+    userToAdd.adminPass,
+    admin.password
+  );
+  if (!passwordMatch) {
+    return res.status(401).json({ message: "Unauthorised" });
+  }
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.getUserByUsername(userToAdd.username);
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Create new user
+    const userId = await User.createUser(
+      userToAdd.username,
+      userToAdd.password,
+      userToAdd.userType,
+      userToAdd.email
+    );
+    res.status(201).json({ message: userToAdd.username + " was added" });
+  } catch (error) {
+    console.error("Error registering user:", error);
+    res.status(500).json({ message: "Error adding user" });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { userToUpdate, user } = req.body;
+  const admin = await User.getUserByUsername(user.username);
+  if (!user || user.userType !== "Admin") {
+    return res.status(401).json({ message: "Unauthorised" });
+  }
+  // Validate password
+  const passwordMatch = await bcrypt.compare(
+    userToUpdate.adminPass,
+    admin.password
+  );
+  if (!passwordMatch) {
+    return res.status(401).json({ message: "Unauthorised" });
+  }
+
+  try {
+    // Create new user
+    const userId = await User.updateUser(
+      userToUpdate.username,
+      userToUpdate.password,
+      userToUpdate.userType,
+      userToUpdate.email,
+      userToUpdate.active,
+      userToUpdate.userID
+    );
+    if (!userId) throw Error;
+
+    res.status(201).json({ message: userToUpdate.username + " was updated" });
+  } catch (error) {
+    console.error("Update User Error", error);
+    res.status(500).json({ message: "Error updating user" });
+  }
+};
+
+// DONE - might need to improve refresh token handling
+exports.login = async (req, res) => {
+  try {
+    const { username, password, stayLoggedin } = req.body;
+ 
+    // Retrieve user from database
+    const user = await User.getUserByUsername(username);
+    const message = {
+      message: "Invalid credentials",
+    };
+    if (!user) {
+      return res.status(401).json(message);
+    }
+    // Validate password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json(message);
+    }
+
+    blackList.resetCount(req.userIP);
+
+    // Refresh Sage token
+    let sageData = null;
+    if (user.sageToken) {
+      try {
+        sageData = await refreshSageTokenLocal(user.userID, user.sageToken);
+        setCookie(res, "sage_refresh_token", sageData.refresh_token, {
+          maxAge: stayLoggedin
+            ? sageData.refresh_token_expires_in * 1000
+            : null,
+        });
+        setCookie(
+          res,
+          "sageToken",
+          sageData.access_token,
+          { maxAge: 240 * 1000 },
+          false
+        );
+      } catch (sageError) {}
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userID: user.userID, username: user.username, userType: user.userType },
+      jwtSecretKey,
+      { expiresIn: "15m" }
+    );
+
+    // Generate Refresh token
+    const refreshToken = jwt.sign(
+      { userID: user.userID, username: user.username, userType: user.userType },
+      refreshTokenSecret,
+      { expiresIn: stayLoggedin ? "7d" : "1h" }
+    );
+
+    // Store refresh token in HttpOnly cookie
+    setCookie(res, "refresh_token", refreshToken, {
+      maxAge: stayLoggedin ? 7 * 24 * 60 * 60 * 1000 : null,
+    });
+    setCookie(res, "token", token, { maxAge: 840 * 1000 }, false);
+
+    res.status(200).json({
+      userID: user.userID,
+      userType: user.userType,
+      username: user.username,
+      sageLoginState: sageData ? true : false,
+      stayLoggedin,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error occurred during login process" });
+  }
+};
+
+//DONE
+exports.generateAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refresh_token;
+
+    if (!refreshToken) throw new Error();
+    jwt.verify(refreshToken, refreshTokenSecret, (err, decoded) => {
+      const token = jwt.sign(
+        {
+          userID: decoded.userID,
+          username: decoded.username,
+          userType: decoded.userType,
+        },
+        jwtSecretKey,
+        { expiresIn: "15m" }
+      );
+      res.cookie("token", token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production", // Ensure it's only sent over HTTPS
+        sameSite: "Strict", // Prevent CSRF attacks
+        maxAge: 840 * 1000,
+      });
+      res.status(200).json({ token });
+    });
+  } catch (error) {
+    console.error("generateAccessToken", error);
+    res.clearCookie("refresh_token", { httpOnly: true });
+    res.clearCookie("sage_refresh_token", { httpOnly: true });
+    res.clearCookie("token", { httpOnly: false });
+    res.clearCookie("sageToken", { httpOnly: false });
+    res.status(401).json({ message: "Please login again" });
+  }
+};
+
+exports.signout = async (req, res) => {
+  try {
+    // Clear refresh token cookie
+    res.clearCookie("refresh_token", { httpOnly: true });
+    res.clearCookie("sage_refresh_token", { httpOnly: true });
+    res.clearCookie("token", { httpOnly: false });
+    res.clearCookie("sageToken", { httpOnly: false });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("signout", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getUsers = async (req, res, next) => {
+  try {
+    // Retrieve users from database
+    const user = await User.getUsers();
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("get Users", error);
+  }
+};
+
+exports.sageAuth = async (req, res, next) => {
+  try {
+    const { user_id } = req.query;
+    const state = crypto.randomBytes(16).toString("hex");
+    const authUrl = `https://www.sageone.com/oauth2/auth/central?filter=apiv3.1&country=ie&locale=en-GB&response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=${user_id}&prompt=login`;
+
+    res.redirect(authUrl);
+  } catch (error) {
+    console.error("sage Auth", error);
+  }
+};
+
+exports.sageCallBack = async (req, res, next) => {
+  const { code, state } = req.query;
+  try {
+    const response = await axios.post(
+      "https://oauth.accounting.sage.com/token",
+      {
+        code,
+        grant_type: "authorization_code",
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI,
+      }
+    );
+    const { access_token, refresh_token, refresh_token_expires_in } =
+      response.data;
+
+    const stored = await User.storeToken(refresh_token, state);
+    if (!stored) throw new Error();
+    // Pass token to frontend
+    res.cookie("sage_refresh_token", refresh_token, {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Ensure it's only sent over HTTPS
+      sameSite: "Strict", // Prevent CSRF attacks
+      maxAge: refresh_token_expires_in * 1000, // 7 days expiration for refresh token
+    });
+    res.cookie("sageToken", access_token, {
+      path: "/",
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production", // Ensure it's only sent over HTTPS
+      sameSite: "Strict", // Prevent CSRF attacks
+      maxAge: 240 * 1000,
+    });
+    res.redirect(APP_HOME_PAGE);
+  } catch (error) {
+    console.error("sage CallBack", error);
+    res.status(500).send("Authentication failed");
+  }
+};
+
+exports.sageTokenRevoke = async (req, res, next) => {
+  try {
+    const { sage_refresh_token } = req.cookies;
+    const { userID } = req.body.user;
+    const response = await axios.post(
+      "https://oauth.accounting.sage.com/revoke",
+      {
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        token: sage_refresh_token,
+      },
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+    const deleted = await User.storeToken(null, userID);
+    if (!deleted) throw new Error("ghggj");
+
+    res.clearCookie("sage_refresh_token", { httpOnly: true });
+    res.clearCookie("sageToken", { httpOnly: false });
+    res.status(200).send("Sage signed out");
+  } catch (error) {
+    console.error("sage Token Revoke", error);
+    res.status(500).send("Sage signout error");
+  }
+};
+
+exports.verify = async (req, res) => {
+  const renewToken = req.headers["renewToken"];
+  try {
+    jwt.verify(renewToken, refreshTokenSecret, (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+      const accessToken = jwt.sign(
+        { id: user.id, username: user.username },
+        jwtSecretKey,
+        { expiresIn: "7d" }
+      );
+      res.json({ accessToken });
+    });
+
+    const verified = jwt.verify(authToken, jwtSecretKey);
+    if (verified) {
+      return res.status(200).json({ expDate: new Date(verified.exp * 1000) });
+    } else {
+      // Access Denied
+      return res.status(401).json({ message: "Session expired" });
+    }
+  } catch (error) {
+    console.error("verify", error);
+    // Access Denied
+    return res.status(401).json({ message: "Session expired" });
+  }
+};
+
+// Function to Refresh Access Token
+exports.generateSageAccessToken = async (req, res) => {
+  const { sage_refresh_token } = req.cookies;
+
+  if (!sage_refresh_token)
+    return res.status(401).json({ message: "No token found" });
+  try {
+    const response = await axios.post(
+      "https://oauth.accounting.sage.com/token",
+      {
+        grant_type: "refresh_token",
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        refresh_token: sage_refresh_token,
+      }
+    );
+    const { access_token, refresh_token, refresh_token_expires_in } =
+      response.data;
+    const storeToken = await User.storeToken(
+      response.data.refresh_token,
+      req.body.user.userID
+    );
+    if (!storeToken) throw new Error();
+    res.cookie("sageToken", access_token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production", // Ensure it's only sent over HTTPS
+      sameSite: "Strict", // Prevent CSRF attacks
+      maxAge: 240 * 1000,
+    });
+    res.cookie("sage_refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Ensure it's only sent over HTTPS
+      sameSite: "Strict", // Prevent CSRF attacks
+      maxAge: refresh_token_expires_in * 1000, // 7 days expiration for refresh token
+    });
+
+    res.status(200).json({ sageToken: access_token });
+  } catch (error) {
+    console.error("generate SageAccess Token", error);
+    res.status(401).json({ message: "Error while refreshing sage token" });
+  }
+};
+
+// Function to Refresh Access Token
+const refreshSageTokenLocal = async (userID, sageToken) => {
+  try {
+    if (sageToken) {
+      const response = await axios.post(
+        "https://oauth.accounting.sage.com/token",
+        {
+          grant_type: "refresh_token",
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          refresh_token: sageToken,
+        }
+      );
+
+      const storeToken = await User.storeToken(
+        response.data.refresh_token,
+        userID
+      );
+      if (!storeToken) throw new Error();
+      return response.data;
+    } else {
+      throw Error;
+    }
+  } catch (error) {
+    console.error("refresh Sage TokenLocal", error);
+
+    if (error.response.status === 400) {
+      const storeToken = await User.storeToken(null, userID);
+    }
+    throw error;
+  }
+};
+
+//DONE
+exports.checkLoginStatues = async (req, res) => {
+  try {
+    const { refresh_token, sage_refresh_token } = req.cookies;
+    let sageLoginState = false;
+    if (refresh_token) {
+      const decoded = jwt.verify(refresh_token, refreshTokenSecret);
+      if (sage_refresh_token) {
+        sageLoginState = true;
+      }
+      res.status(200).json({ sageLoginState });
+    } else {
+      throw new Error("token not found");
+    }
+  } catch (error) {
+    res.clearCookie("refresh_token", { httpOnly: true });
+    res.clearCookie("sage_refresh_token", { httpOnly: true });
+    res.clearCookie("token", { httpOnly: false });
+    res.clearCookie("sageToken", { httpOnly: false });
+    res.status(401).json({ message: "Unauthorized. Please login" });
+  }
+};
+
+const setCookie = (res, name, value, options, httpOnly = true) => {
+  res.cookie(name, value, {
+    httpOnly,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+    ...options,
+  });
+};
+ */
