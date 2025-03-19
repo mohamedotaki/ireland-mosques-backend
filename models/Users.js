@@ -4,15 +4,8 @@ const bcrypt = require("bcryptjs");
 const createUser = async (user) => {
   const hashedPassword = await bcrypt.hash(user.password, 10);
   const [rows] = await pool.execute(
-    "INSERT INTO users (mosque_id,  name, email, contact_number,password,user_type) VALUES ?",
-    [
-      user.mosque_id,
-      user.name,
-      user.email,
-      user.contact_number,
-      hashedPassword,
-      user.user_type,
-    ]
+    "INSERT INTO users ( name, email, contact_number,password) VALUES (?, ?, ?, ?)",
+    [user.name, user.email, user.phoneNumber, hashedPassword]
   );
   return rows.insertId;
 };

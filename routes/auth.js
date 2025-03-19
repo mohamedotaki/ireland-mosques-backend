@@ -1,22 +1,15 @@
-/* 
-This File is done nothing else need to be done
- */ /* 
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
-const authMiddleware = require("../middleware/authMiddleware");
-
 const { body } = require("express-validator");
 
 // Register user
 router.post(
-  "/register",
-  authMiddleware.verifyToken,
-  authMiddleware.checkPermissions(["Admin"]),
-  [body("userToAdd").notEmpty()],
-  authController.register
-);
+  "/signup",
 
+  authController.signup
+);
+/* 
 router.put(
   "/user/:id",
   authMiddleware.verifyToken,
@@ -45,6 +38,5 @@ router.get(
   authMiddleware.verifyToken,
   authController.generateSageAccessToken
 );
-
-module.exports = router;
  */
+module.exports = router;

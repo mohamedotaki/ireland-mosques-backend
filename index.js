@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const mosquesRoutes = require("./routes/mosques");
 const feedbacksRoutes = require("./routes/feedbacks");
 const appDataRoutes = require("./routes/appData");
+const authRoute = require("./routes/auth");
 
 const cookieParser = require("cookie-parser");
 const app = express();
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use("/api/mosques", mosquesRoutes);
 app.use("/api/feedbacks", feedbacksRoutes);
 app.use("/api/app", appDataRoutes);
+app.use("/api/auth", authRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
