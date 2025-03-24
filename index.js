@@ -5,12 +5,13 @@ const mosquesRoutes = require("./routes/mosques");
 const feedbacksRoutes = require("./routes/feedbacks");
 const appDataRoutes = require("./routes/appData");
 const authRoute = require("./routes/auth");
-
 const cookieParser = require("cookie-parser");
+
 const app = express();
 const PORT = process.env.port || 3001;
+const appUrl = process.env.port || "http://192.168.0.11:3000";
 
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: appUrl, credentials: true }));
 
 // Middleware
 app.use(bodyParser.json());
@@ -24,28 +25,7 @@ app.use("/api/auth", authRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.log(err);
-  let code = 500;
-  let message = "";
-  switch (err.code) {
-    case 1451:
-      message = "Item cannot be deleted or update as its used somewhere else";
-      break;
-    case 404:
-      message = err.message + " not found";
-      break;
-    case 500:
-      message = "Internal Server Error in " + err.message;
-      break;
-    default:
-      if (typeof err === "string") {
-        message = err;
-      } else {
-        message = "Internal Server Error in " + err.message;
-      }
-      break;
-  }
-  res.status(code).json({ message });
+  res.status(code).json({ message: err });
 });
 
 // Start server

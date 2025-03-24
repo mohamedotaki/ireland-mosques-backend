@@ -1,12 +1,11 @@
 const jwt = require("jsonwebtoken");
-const jwtSecretKey = process.env.key || "1234qsfg";
+const jwtSecretKey = process.env.key || "TestingKey";
 const axios = require("axios");
 const url = require("url");
 const { validationResult } = require("express-validator");
 
-/* exports.verifyToken = (req, res, next) => {
-   const token = req.headers["authorization"];
-
+exports.verifyToken = (req, res, next) => {
+  const token = req.cookies.Authorization;
   if (!token) {
     return res.status(403).json({ message: "No token provided" });
   }
@@ -19,10 +18,9 @@ const { validationResult } = require("express-validator");
     }
     req.body.user = decoded;
     next();
-  }); 
-  next();
+  });
 };
- */
+
 exports.inputValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

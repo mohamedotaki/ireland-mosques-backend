@@ -1,42 +1,57 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
+const authMiddleware = require("../middleware/authMiddleware");
 const { body } = require("express-validator");
+
+const loginValidation = [
+  body("user").exists().withMessage("User object is required"),
+  body("user.email")
+    .notEmpty()
+    .withMessage("User email is required")
+    .isString()
+    .withMessage("User email must be a string"),
+  body("user.password")
+    .notEmpty()
+    .withMessage("User password is required")
+    .isString()
+    .withMessage("User password must be a string"),
+];
+
+const signupValidation = [
+  body("user.confirmPassword")
+    .notEmpty()
+    .withMessage("User confirmPassword is required")
+    .isString()
+    .withMessage("User confirmPassword must be a string"),
+  body("user.phoneNumber")
+    .notEmpty()
+    .withMessage("User phoneNumber is required")
+    .isString()
+    .withMessage("User phoneNumber must be a string"),
+];
+
+const sinoutValidation = [
+  body("userID").notEmpty().withMessage("userID is required"),
+];
 
 // Register user
 router.post(
   "/signup",
-
+  loginValidation,
+  signupValidation,
+  authMiddleware.inputValidation,
   authController.signup
 );
-/* 
-router.put(
-  "/user/:id",
-  authMiddleware.verifyToken,
-  authMiddleware.checkPermissions(["Admin"]),
-  [body("userToUpdate").notEmpty()],
-  authController.updateUser
+
+router.post(
+  "/signin",
+  loginValidation,
+  authMiddleware.inputValidation,
+  /*   authMiddleware.loginLimiter,
+   */ authController.signin
 );
 
-// Login user
-router.post("/login", authMiddleware.loginLimiter, authController.login);
-router.get("/refreshAccess", authController.generateAccessToken);
-router.get("/checkLoginStatus", authController.checkLoginStatues);
-router.get("/signout", authController.signout);
+router.get("/signout", authMiddleware.verifyToken, authController.signout);
 
-// Login user Sage
-
-router.get("/sageAuth", authController.sageAuth);
-router.get("/sageCallback", authController.sageCallBack);
-router.get(
-  "/sageRevoke",
-  authMiddleware.verifyToken,
-  authController.sageTokenRevoke
-);
-router.get(
-  "/refreshSageAccess",
-  authMiddleware.verifyToken,
-  authController.generateSageAccessToken
-);
- */
 module.exports = router;

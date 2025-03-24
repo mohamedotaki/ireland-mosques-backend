@@ -14,7 +14,14 @@ const getUser = async (user_email) => {
   const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [
     user_email,
   ]);
-  return rows;
+  return rows[0];
+};
+
+const getUserByID = async (user_ID) => {
+  const [rows] = await pool.execute("SELECT * FROM users WHERE id = ?", [
+    user_ID,
+  ]);
+  return rows[0];
 };
 
 const deleteUser = async (user_id) => {
@@ -28,4 +35,5 @@ module.exports = {
   createUser,
   deleteUser,
   getUser,
+  getUserByID,
 };
