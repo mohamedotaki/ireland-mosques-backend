@@ -1,4 +1,5 @@
 const User = require("../models/Users");
+const transporter = require("../config/mail");
 const bcrypt = require("bcryptjs");
 /* const crypto = require("crypto");
  */ /* const blackList = require("../models/BlackList");
@@ -7,6 +8,9 @@ const bcrypt = require("bcryptjs");
  */ const jwtSecretKey = process.env.key || "TestingKey";
 /* const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "1Sfr%3£%^GDhr5";
  */
+
+const verificationCodes = {};
+
 exports.signin = async (req, res) => {
   try {
     const { user } = req.body;
@@ -76,18 +80,21 @@ exports.signup = async (req, res, next) => {
     const { user } = req.body;
     // Check if user already exists
     const existingUser = await User.getUser(user.email);
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
     if (user.password !== user.confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
     }
+    sendVerificationCode(user.email);
     // Create new user
     await User.createUser(user);
-    res.status(201).json({ message: "Signed up successfully" });
+    return res
+      .status(200)
+      .json({ message: "Verification code sent successfully" });
   } catch (error) {
     console.error("Error Signing up", error);
-    next(error);
+    return res.status(500).json({ message: "error" });
   }
 };
 
@@ -98,4 +105,32 @@ const setCookie = (res, name, value, options, httpOnly = true) => {
     sameSite: "Strict",
     ...options,
   });
+};
+
+// Generate a random verification code
+const generateVerificationCode = () => {
+  const chars = "0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+};
+
+const sendVerificationCode = async (email) => {
+  const chars = "0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  // Create the email message
+  const mailOptions = {
+    from: "noreply@alotaki.com", // Replace with your email
+    to: email, // Recipient's email
+    subject: "Your Verification Code",
+    text: `Your verification code is: ${code}`,
+  };
+  const expirationTime = Date.now() + 5 * 60 * 1000; // Code expires in 5 minutes
+  verificationCodes[email] = { code: code, expiresAt: expirationTime };
+  await transporter.sendMail(mailOptions);
 };
