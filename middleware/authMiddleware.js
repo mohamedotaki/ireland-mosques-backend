@@ -11,7 +11,6 @@ exports.verifyToken = (req, res, next) => {
   }
   jwt.verify(token, jwtSecretKey, (err, decoded) => {
     if (err) {
-      console.log("err");
       return res
         .status(401)
         .json({ message: "Unauthorized. Please login", redirectTo: "/" });

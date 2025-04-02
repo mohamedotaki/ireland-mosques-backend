@@ -19,7 +19,7 @@ exports.signin = async (req, res) => {
     const message = {
       message: "Invalid credentials",
     };
-    if (!user) {
+    if (!dbUser) {
       return res.status(401).json(message);
     }
     // Validate password
@@ -28,29 +28,33 @@ exports.signin = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json(message);
     }
-    const token = jwt.sign(
-      {
-        userID: dbUser.id,
-        email: dbUser.email,
-        userType: dbUser.user_type,
-      },
-      jwtSecretKey,
-      { expiresIn: "365d" }
-    );
-
-    setCookie(
-      res,
-      "Authorization",
-      token,
-      { maxAge: 365 * 24 * 60 * 60 * 1000 },
-      false
-    );
-
+    if (dbUser.account_status === "Active") {
+      const token = jwt.sign(
+        {
+          userID: dbUser.id,
+          email: dbUser.email,
+          userType: dbUser.user_type,
+        },
+        jwtSecretKey,
+        { expiresIn: "365d" }
+      );
+      setCookie(
+        res,
+        "Authorization",
+        token,
+        { maxAge: 365 * 24 * 60 * 60 * 1000 },
+        false
+      );
+    }
     res.status(200).json({
-      name: dbUser.name,
-      userType: dbUser.user_type,
-      email: dbUser.email,
-      lastSignin: dbUser.last_signin,
+      user: {
+        userID: dbUser.id,
+        name: dbUser.name,
+        userType: dbUser.user_type,
+        account_status: dbUser.acount_status,
+        email: dbUser.email,
+        createdAt: dbUser.created_at,
+      },
     });
   } catch (error) {
     console.error("Error in Login", error);
@@ -75,6 +79,60 @@ exports.signout = async (req, res) => {
   }
 };
 
+exports.verifyEmail = async (req, res) => {
+  const { user, code } = req.body;
+  console.log(user, code);
+  const dbUser = await User.getUser(user.email);
+  if (!dbUser) {
+    return res.status(404).json({ message: "Error during verification" });
+  }
+  if (
+    verificationCodes[user.email] &&
+    verificationCodes[user.email].verificationCode === code
+  ) {
+    verificationCodes[user.email].attempts++;
+    if (verificationCodes[user.email].expiresAt < new Date()) {
+      return res.status(400).json({ message: "Verification code has expired" });
+    }
+    if (verificationCodes[user.email].attempts >= 6) {
+      return res.status(400).json({
+        message: "Too many attempts",
+      });
+    }
+    await User.updateAccountStatus(dbUser.id, "Active");
+    const token = jwt.sign(
+      {
+        userID: dbUser.id,
+        email: dbUser.email,
+        userType: dbUser.user_type,
+      },
+      jwtSecretKey,
+      { expiresIn: "365d" }
+    );
+    setCookie(
+      res,
+      "Authorization",
+      token,
+      { maxAge: 365 * 24 * 60 * 60 * 1000 },
+      false
+    );
+    verificationCodes[user.email].attempts = 0;
+    return res.status(200).json({
+      user: {
+        userID: dbUser.id,
+        name: dbUser.name,
+        userType: dbUser.user_type,
+        account_status: "Active",
+        email: dbUser.email,
+        createdAt: dbUser.created_at,
+      },
+      message: "Email verified successfully",
+    });
+  }
+  verificationCodes[email].attempts++;
+  return res.status(400).json({ message: "Invalid verification code" });
+};
+
 exports.signup = async (req, res, next) => {
   try {
     const { user } = req.body;
@@ -83,18 +141,30 @@ exports.signup = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    if (user.password !== user.confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
-    }
-    sendVerificationCode(user.email);
     // Create new user
-    await User.createUser(user);
-    return res
-      .status(200)
-      .json({ message: "Verification code sent successfully" });
+    const userID = await User.createUser(user);
+    const verificationCode = generateVerificationCode();
+    sendVerificationCode(user.email, verificationCode);
+    verificationCodes[user.email] = {
+      verificationCode,
+      expiresAt: new Date(Date.now() + 1 * 60 * 1000),
+      attempts: verificationCodes[user.email].attempts || 0,
+    };
+
+    return res.status(200).json({
+      user: {
+        userID,
+        name: user.name,
+        email: user.email,
+        account_status: "Pending",
+        user_type: "User",
+        createdAt: new Date(),
+      },
+      message: "Verification code sent successfully",
+    });
   } catch (error) {
     console.error("Error Signing up", error);
-    return res.status(500).json({ message: "error" });
+    return res.status(500).json({ message: "Errror during signup" });
   }
 };
 
@@ -117,12 +187,7 @@ const generateVerificationCode = () => {
   return code;
 };
 
-const sendVerificationCode = async (email) => {
-  const chars = "0123456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
+const sendVerificationCode = async (email, code) => {
   // Create the email message
   const mailOptions = {
     from: "noreply@alotaki.com", // Replace with your email

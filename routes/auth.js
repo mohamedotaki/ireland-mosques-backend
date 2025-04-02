@@ -52,6 +52,14 @@ router.post(
    */ authController.signin
 );
 
+router.post(
+  "/verify",
+  /*   loginValidation,
+  authMiddleware.inputValidation, */
+  /*   authMiddleware.loginLimiter,
+   */ authController.verifyEmail
+);
+
 router.get("/signout", authMiddleware.verifyToken, authController.signout);
 
 module.exports = router;

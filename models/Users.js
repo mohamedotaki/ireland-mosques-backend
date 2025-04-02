@@ -31,9 +31,18 @@ const deleteUser = async (user_id) => {
   return rows.affectedRows;
 };
 
+const updateAccountStatus = async (id, account_status) => {
+  const [rows] = await pool.execute(
+    `UPDATE users SET acount_status =?  WHERE id = ? `,
+    [account_status, id]
+  );
+  return rows.affectedRows;
+};
+
 module.exports = {
   createUser,
   deleteUser,
   getUser,
   getUserByID,
+  updateAccountStatus,
 };
