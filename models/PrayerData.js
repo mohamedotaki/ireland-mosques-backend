@@ -51,6 +51,19 @@ const getAllPrayers = async () => {
   }
 };
 
+const getAllPrayersByMosqueID = async (mosque_ids) => {
+  try {
+    const [rows] = await pool.execute(
+      "SELECT * FROM prayer_data where mosque_id = (?)",
+      [mosque_ids]
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error retrieving prayers:", error);
+    throw new Error("Failed to retrieve prayers.");
+  }
+};
+
 const updateAdhan = async (prayer_data, connection = pool) => {
   const [rows] = await connection.execute(
     `UPDATE prayer_data SET adhan_time =? WHERE mosque_id = ? AND id = ?`,

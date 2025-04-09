@@ -28,30 +28,15 @@ exports.signin = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json(message);
     }
-    if (dbUser.account_status === "Active") {
-      const token = jwt.sign(
-        {
-          userID: dbUser.id,
-          email: dbUser.email,
-          userType: dbUser.user_type,
-        },
-        jwtSecretKey,
-        { expiresIn: "365d" }
-      );
-      setCookie(
-        res,
-        "Authorization",
-        token,
-        { maxAge: 365 * 24 * 60 * 60 * 1000 },
-        false
-      );
-    }
+
+    sendVerificationCode(dbUser.email);
+
     res.status(200).json({
       user: {
         userID: dbUser.id,
         name: dbUser.name,
         userType: dbUser.user_type,
-        account_status: dbUser.acount_status,
+        account_status: "Pending",
         email: dbUser.email,
         createdAt: dbUser.created_at,
       },
@@ -81,25 +66,16 @@ exports.signout = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
   const { user, code } = req.body;
-  console.log(user, code);
   const dbUser = await User.getUser(user.email);
   if (!dbUser) {
     return res.status(404).json({ message: "Error during verification" });
   }
-  if (
-    verificationCodes[user.email] &&
-    verificationCodes[user.email].verificationCode === code
-  ) {
-    verificationCodes[user.email].attempts++;
-    if (verificationCodes[user.email].expiresAt < new Date()) {
-      return res.status(400).json({ message: "Verification code has expired" });
+
+  const message = checkVerificationCode(user.email, code);
+  if (message === "verified") {
+    if (dbUser.account_status === "Pending") {
+      await User.updateAccountStatus(dbUser.id, "Active");
     }
-    if (verificationCodes[user.email].attempts >= 6) {
-      return res.status(400).json({
-        message: "Too many attempts",
-      });
-    }
-    await User.updateAccountStatus(dbUser.id, "Active");
     const token = jwt.sign(
       {
         userID: dbUser.id,
@@ -116,7 +92,6 @@ exports.verifyEmail = async (req, res) => {
       { maxAge: 365 * 24 * 60 * 60 * 1000 },
       false
     );
-    verificationCodes[user.email].attempts = 0;
     return res.status(200).json({
       user: {
         userID: dbUser.id,
@@ -129,8 +104,7 @@ exports.verifyEmail = async (req, res) => {
       message: "Email verified successfully",
     });
   }
-  verificationCodes[email].attempts++;
-  return res.status(400).json({ message: "Invalid verification code" });
+  return res.status(400).json({ message });
 };
 
 exports.signup = async (req, res, next) => {
@@ -143,13 +117,7 @@ exports.signup = async (req, res, next) => {
     }
     // Create new user
     const userID = await User.createUser(user);
-    const verificationCode = generateVerificationCode();
-    sendVerificationCode(user.email, verificationCode);
-    verificationCodes[user.email] = {
-      verificationCode,
-      expiresAt: new Date(Date.now() + 1 * 60 * 1000),
-      attempts: verificationCodes[user.email].attempts || 0,
-    };
+    sendVerificationCode(user.email);
 
     return res.status(200).json({
       user: {
@@ -160,7 +128,8 @@ exports.signup = async (req, res, next) => {
         user_type: "User",
         createdAt: new Date(),
       },
-      message: "Verification code sent successfully",
+      message:
+        "Verification code was sent successfully. Please check your email inbox or spam folder.",
     });
   } catch (error) {
     console.error("Error Signing up", error);
@@ -187,15 +156,47 @@ const generateVerificationCode = () => {
   return code;
 };
 
-const sendVerificationCode = async (email, code) => {
+const sendVerificationCode = async (email) => {
+  const verificationCode = generateVerificationCode();
   // Create the email message
   const mailOptions = {
     from: "noreply@alotaki.com", // Replace with your email
     to: email, // Recipient's email
     subject: "Your Verification Code",
-    text: `Your verification code is: ${code}`,
+    text: `Your verification code is: ${verificationCode}`,
   };
   const expirationTime = Date.now() + 5 * 60 * 1000; // Code expires in 5 minutes
-  verificationCodes[email] = { code: code, expiresAt: expirationTime };
+
+  verificationCodes[email] = {
+    verificationCode,
+    expiresAt: expirationTime,
+    attempts: verificationCodes[email]?.attempts || 0,
+    date: verificationCodes[email]?.Date || new Date().getDate(),
+  };
   await transporter.sendMail(mailOptions);
+};
+
+const checkVerificationCode = (email, code) => {
+  if (verificationCodes[email]) {
+    if (verificationCodes[email].attempts >= 6) {
+      if (verificationCodes[email].date === new Date().getDate()) {
+        return "Too many attempts. Please try again later";
+      } else {
+        verificationCodes[email].attempts = 0;
+        verificationCodes[email].date = new Date().getDate();
+      }
+    }
+    verificationCodes[email].attempts++;
+    if (verificationCodes[email].verificationCode === code) {
+      if (verificationCodes[email].expiresAt < new Date()) {
+        return "Verification code has expired";
+      }
+      /*     const dbUser = await User.getUser(email);
+       */
+      delete verificationCodes[email];
+      return "verified";
+    }
+  }
+
+  return "Invalid verification code";
 };

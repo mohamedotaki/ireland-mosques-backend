@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.port || 3001;
 const appUrl = process.env.port || "http://192.168.0.11:3000";
 
-app.use(cors({ origin: appUrl, credentials: true }));
+app.use(cors({ origin: "http://192.168.0.11:3000", credentials: true }));
 
 // Middleware
 app.use(bodyParser.json());

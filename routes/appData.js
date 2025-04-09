@@ -9,4 +9,11 @@ router.get(
   appDataController.appLunch
 );
 
+// Create route
+router.get(
+  "/checkForNewData",
+
+  appDataController.checkForNewData
+);
+
 module.exports = router;

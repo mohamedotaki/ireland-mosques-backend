@@ -1,7 +1,5 @@
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
-const axios = require("axios");
-const url = require("url");
 const { validationResult } = require("express-validator");
 
 exports.verifyToken = (req, res, next) => {

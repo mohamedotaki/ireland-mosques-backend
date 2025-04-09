@@ -6,10 +6,28 @@ const time_table = require("../timeTable/timeTable.json");
 //create routes
 exports.appLunch = async (req, res, next) => {
   try {
-    const SQLmosques = await Mosques.getAllMosques();
-    const SQLprayers = await prayerData.getAllPrayers();
-    const mosques = createMosqueObject(SQLmosques, SQLprayers);
-    res.status(200).json({ mosques });
+    const newUpdateDate = new Date();
+    const SQLmosques = await Mosques.getAllMosquesWithPrayers();
+    const mosques = createMosqueObject(SQLmosques);
+    res.status(200).json({ mosques, newUpdateDate });
+  } catch (error) {
+    console.error(error);
+  } finally {
+  }
+};
+
+//create routes
+exports.checkForNewData = async (req, res, next) => {
+  try {
+    const { userLastUpdate } = req.query;
+    const newUpdateDate = new Date();
+    const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
+    if (SQLmosques.length > 0) {
+      const mosques = createMosqueObject(SQLmosques);
+      res.status(200).json({ mosques, newUpdateDate });
+    } else {
+      res.status(200).json({ mosques: [], newUpdateDate });
+    }
   } catch (error) {
     console.error(error);
   } finally {
@@ -34,22 +52,25 @@ const createMosqueObject = (mosques, prayers) => {
         latitude: mosque.latitude,
         longitude: mosque.longitude,
         iban: mosque.iban,
+        time_table: time_table[mosque.location] || null,
         prayers: [],
       };
     }
-    prayers.forEach((row) => {
-      mosquesObject[mosqueID].prayers.push({
-        id: row.id,
-        prayer_name: row.prayer_name,
-        adhan_time: row.adhan_time,
-        adhan_locked: row.adhan_locked,
-        iquamh_time: row.iquamh_time,
-        iquamh_offset: row.iquamh_offset,
-      });
+
+    mosquesObject[mosqueID].prayers.push({
+      id: mosque.prayer_id,
+      prayer_name: mosque.prayer_name,
+      adhan_time: mosque.adhan_time,
+      adhan_locked: mosque.adhan_locked,
+      iquamh_time: mosque.iquamh_time,
+      iquamh_offset: mosque.iquamh_offset,
     });
+
     // Add the order detail to the order's details array
   });
 
+  return mosquesObject;
   // Convert the orders object to an array
-  return Object.values(mosquesObject);
+  /*   return Object.values(mosquesObject);
+   */
 };

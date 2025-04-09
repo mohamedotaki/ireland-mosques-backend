@@ -24,9 +24,25 @@ const createMosque = async (mosque, connection = pool) => {
   }
 };
 
-const getAllMosques = async () => {
+const getAllMosquesWithPrayers = async () => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM mosques");
+    const [rows] = await pool.execute(
+      "SELECT * FROM mosques left join prayer_data ON prayer_data.mosque_id = mosques.id"
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error retrieving mosques:", error);
+    throw new Error("Failed to retrieve mosques.");
+  }
+};
+
+const getAllUpdatedMosques = async (userLastUpdate) => {
+  try {
+    console.log(userLastUpdate);
+    const [rows] = await pool.execute(
+      "SELECT * FROM mosques left JOIN prayer_data ON prayer_data.mosque_id = mosques.id WHERE last_update > ?",
+      [userLastUpdate]
+    );
     return rows;
   } catch (error) {
     console.error("Error retrieving mosques:", error);
@@ -117,5 +133,6 @@ module.exports = {
   updateMosque,
   getMosqueByName,
   getMosqueByID,
-  getAllMosques,
+  getAllMosquesWithPrayers,
+  getAllUpdatedMosques,
 };

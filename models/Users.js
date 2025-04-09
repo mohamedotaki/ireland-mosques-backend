@@ -33,7 +33,7 @@ const deleteUser = async (user_id) => {
 
 const updateAccountStatus = async (id, account_status) => {
   const [rows] = await pool.execute(
-    `UPDATE users SET acount_status =?  WHERE id = ? `,
+    `UPDATE users SET account_status =?  WHERE id = ? `,
     [account_status, id]
   );
   return rows.affectedRows;
