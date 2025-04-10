@@ -64,6 +64,8 @@ const createMosqueObject = (mosques, prayers) => {
       adhan_locked: mosque.adhan_locked,
       iquamh_time: mosque.iquamh_time,
       iquamh_offset: mosque.iquamh_offset,
+      adhan_modified_on: mosque.adhan_modified_on,
+      iquamh_modified_on: mosque.iquamh_modified_on,
     });
 
     // Add the order detail to the order's details array
