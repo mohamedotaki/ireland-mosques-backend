@@ -24,18 +24,13 @@ const createPrayerData = async (mosque_id, connection = pool) => {
   return inserted_prayers.affectedRows;
 };
 
-const updateIquamh = async (prayer_data, connection = pool) => {
+const updateIquamh = async (iquamh_time, iquamh_offset, mosque_id, id) => {
   if (prayer_data.iquamh_time && prayer_data.iquamh_offset) {
     throw Error("You can set only fixed time or offset time");
   } else {
-    const [rows] = await connection.execute(
-      `UPDATE prayer_data SET iquamh_time =? , iquamh_offset =?  WHERE mosque_id = ? AND id = ?`,
-      [
-        prayer_data.iquamh_time || null,
-        prayer_data.iquamh_offset || null,
-        prayer_data.mosque_id,
-        prayer_data.id,
-      ]
+    const [rows] = await pool.execute(
+      `UPDATE prayer_data SET iquamh_time =? , iquamh_offset =?,iquamh_modified_on =?  WHERE mosque_id = ? AND id = ?`,
+      [iquamh_time || null, iquamh_offset || null, new Date(), mosque_id, id]
     );
     return rows.affectedRows;
   }
@@ -64,10 +59,10 @@ const getAllPrayersByMosqueID = async (mosque_ids) => {
   }
 };
 
-const updateAdhan = async (prayer_data, connection = pool) => {
-  const [rows] = await connection.execute(
-    `UPDATE prayer_data SET adhan_time =? WHERE mosque_id = ? AND id = ?`,
-    [prayer_data.adhan_time || null, prayer_data.mosque_id, prayer_data.id]
+const updateAdhan = async (time, mosque_id, id) => {
+  const [rows] = await pool.execute(
+    `UPDATE prayer_data SET adhan_time =?,SET adhan_modified_on=? WHERE mosque_id = ? AND id = ?`,
+    [time || null, mosque_id, id]
   );
   return rows.affectedRows;
 };
