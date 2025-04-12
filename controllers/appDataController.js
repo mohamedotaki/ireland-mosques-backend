@@ -1,7 +1,8 @@
 const Mosques = require("../models/Mosques");
-const prayerData = require("../models/PrayerData");
-const pool = require("../config/db");
+const User = require("../models/Users");
 const time_table = require("../timeTable/timeTable.json");
+const jwt = require("jsonwebtoken");
+const jwtSecretKey = process.env.key || "TestingKey";
 
 //create routes
 exports.appLunch = async (req, res, next) => {
@@ -19,18 +20,49 @@ exports.appLunch = async (req, res, next) => {
 //create routes
 exports.checkForNewData = async (req, res, next) => {
   try {
+    const token = req.cookies.Authorization;
     const { userLastUpdate } = req.query;
     const newUpdateDate = new Date();
+    let user = null;
+    if (token) {
+      try {
+        const verified = jwt.verify(token, jwtSecretKey);
+        if (verified) {
+          const dbUser = await User.getModifiedUser(
+            verified.userID,
+            userLastUpdate
+          );
+          if (dbUser) {
+            user = {
+              name: dbUser.name,
+              userType: dbUser.user_type,
+              account_status: dbUser.account_status,
+              createdAt: dbUser.created_at,
+              lastSignin: dbUser.last_signin,
+              modified_on: dbUser.modified_on,
+            };
+            const token = createToken(dbUser);
+            res.cookie("Authorization", token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "Strict",
+              maxAge: 365 * 24 * 60 * 60 * 1000,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
-      res.status(200).json({ mosques, newUpdateDate });
+      res.status(200).json({ mosques, newUpdateDate, user });
     } else {
-      res.status(200).json({ mosques: [], newUpdateDate });
+      res.status(200).json({ mosques: [], newUpdateDate, user });
     }
   } catch (error) {
     console.error(error);
-  } finally {
   }
 };
 
@@ -75,4 +107,22 @@ const createMosqueObject = (mosques, prayers) => {
   // Convert the orders object to an array
   /*   return Object.values(mosquesObject);
    */
+};
+
+const createToken = (user) => {
+  return jwt.sign(
+    {
+      userID: user.id,
+      name: user.name,
+      userType: user.user_type,
+      account_status: user.account_status,
+      email: user.email,
+      createdAt: user.created_at,
+      lastSignin: user.last_signin,
+      modified_on: user.modified_on,
+      mosqueID: user.mosqueID,
+    },
+    jwtSecretKey,
+    { expiresIn: "365d" }
+  );
 };

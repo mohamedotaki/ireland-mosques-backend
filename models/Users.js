@@ -24,6 +24,14 @@ const getUserByID = async (user_ID) => {
   return rows[0];
 };
 
+const getModifiedUser = async (user_ID, last_update) => {
+  const [rows] = await pool.execute(
+    "SELECT * FROM users WHERE id = ? and modified_on >= ?",
+    [user_ID, last_update]
+  );
+  return rows[0] || null;
+};
+
 const deleteUser = async (user_id) => {
   const [rows] = await pool.execute("DELETE FROM users WHERE id = ?;", [
     user_id,
@@ -39,10 +47,20 @@ const updateAccountStatus = async (id, account_status) => {
   return rows.affectedRows;
 };
 
+const updateUUID = async (id, UUID) => {
+  const [rows] = await pool.execute(`UPDATE users SET UUID =?  WHERE id = ? `, [
+    UUID,
+    id,
+  ]);
+  return rows.affectedRows;
+};
+
 module.exports = {
   createUser,
   deleteUser,
   getUser,
   getUserByID,
   updateAccountStatus,
+  getModifiedUser,
+  updateUUID,
 };
