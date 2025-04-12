@@ -1,19 +1,15 @@
 const User = require("../models/Users");
 const transporter = require("../config/mail");
 const bcrypt = require("bcryptjs");
-/* const crypto = require("crypto");
- */ /* const blackList = require("../models/BlackList");
+/* const blackList = require("../models/BlackList");
  */ const jwt = require("jsonwebtoken");
-/* const { validationResult } = require("express-validator");
- */ const jwtSecretKey = process.env.key || "TestingKey";
-/* const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "1Sfr%3£%^GDhr5";
- */
+const jwtSecretKey = process.env.key || "TestingKey";
 
 const verificationCodes = {};
 
 exports.signin = async (req, res) => {
   try {
-    const { user } = req.body;
+    const { user, UUID } = req.body;
     // Retrieve user from database
     const dbUser = await User.getUser(user.email);
     const message = {
@@ -29,16 +25,28 @@ exports.signin = async (req, res) => {
       return res.status(401).json(message);
     }
 
-    sendVerificationCode(dbUser.email);
+    const token = createToken(
+      UUID === dbUser.UUID ? dbUser : { ...dbUser, account_status: "Pending" }
+    );
+    setCookie(
+      res,
+      "Authorization",
+      token,
+      { maxAge: 365 * 24 * 60 * 60 * 1000 },
+      false
+    );
+    //send verification code if user is not using same device
+    UUID !== dbUser.UUID && sendVerificationCode(dbUser.email);
 
     res.status(200).json({
       user: {
-        userID: dbUser.id,
         name: dbUser.name,
         userType: dbUser.user_type,
-        account_status: "Pending",
-        email: dbUser.email,
+        account_status:
+          UUID === dbUser.UUID ? dbUser.account_status : "Pending",
         createdAt: dbUser.created_at,
+        lastSignin: dbUser.last_signin,
+        modified_on: dbUser.modified_on,
       },
     });
   } catch (error) {
@@ -49,14 +57,7 @@ exports.signin = async (req, res) => {
 
 exports.signout = async (req, res) => {
   try {
-    const { user } = req.body;
-    const dbUser = await User.getUserByID(user.userID);
-    if (!dbUser) {
-      return res.status(500).json({ message: "Error during logout process" });
-    }
-    // Clear cookies
     res.clearCookie("Authorization");
-
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error(error);
@@ -65,26 +66,18 @@ exports.signout = async (req, res) => {
 };
 
 exports.verifyEmail = async (req, res) => {
-  const { user, code } = req.body;
-  const dbUser = await User.getUser(user.email);
-  if (!dbUser) {
-    return res.status(404).json({ message: "Error during verification" });
-  }
+  const { user, code, UUID } = req.body;
 
   const message = checkVerificationCode(user.email, code);
+
   if (message === "verified") {
-    if (dbUser.account_status === "Pending") {
-      await User.updateAccountStatus(dbUser.id, "Active");
+    if (user.account_status === "Pending") {
+      await User.updateAccountStatus(user.userID, "Active");
     }
-    const token = jwt.sign(
-      {
-        userID: dbUser.id,
-        email: dbUser.email,
-        userType: dbUser.user_type,
-      },
-      jwtSecretKey,
-      { expiresIn: "365d" }
-    );
+    await User.updateUUID(user.userID, UUID);
+    const dbUser = await User.getUser(user.email);
+    const token = createToken(dbUser);
+
     setCookie(
       res,
       "Authorization",
@@ -92,14 +85,15 @@ exports.verifyEmail = async (req, res) => {
       { maxAge: 365 * 24 * 60 * 60 * 1000 },
       false
     );
+
     return res.status(200).json({
       user: {
-        userID: dbUser.id,
         name: dbUser.name,
         userType: dbUser.user_type,
-        account_status: "Active",
-        email: dbUser.email,
+        account_status: dbUser.account_status,
         createdAt: dbUser.created_at,
+        lastSignin: dbUser.last_signin,
+        modified_on: dbUser.modified_on,
       },
       message: "Email verified successfully",
     });
@@ -118,15 +112,25 @@ exports.signup = async (req, res, next) => {
     // Create new user
     const userID = await User.createUser(user);
     sendVerificationCode(user.email);
+    const dbUser = await User.getUserByID(userID);
 
+    const token = createToken(dbUser);
+
+    setCookie(
+      res,
+      "Authorization",
+      token,
+      { maxAge: 365 * 24 * 60 * 60 * 1000 },
+      false
+    );
     return res.status(200).json({
       user: {
-        userID,
-        name: user.name,
-        email: user.email,
-        account_status: "Pending",
-        user_type: "User",
-        createdAt: new Date(),
+        name: dbUser.name,
+        userType: dbUser.user_type,
+        account_status: dbUser.account_status,
+        createdAt: dbUser.created_at,
+        lastSignin: dbUser.last_signin,
+        modified_on: dbUser.modified_on,
       },
       message:
         "Verification code was sent successfully. Please check your email inbox or spam folder.",
@@ -137,6 +141,36 @@ exports.signup = async (req, res, next) => {
   }
 };
 
+/* exports.resendVerificationCode = async (req, res) => {
+  const { user } = req.body;
+  const dbUser = await User.getUser(user.email);
+  if (!dbUser) {
+    return res.status(404).json({ message: "Error during verification" });
+  }
+  sendVerificationCode(user.email);
+  return res.status(200).json({
+    message:
+      "Verification code was sent successfully. Please check your email inbox or spam folder.",
+  });
+}; */
+/* exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const dbUser = await User.getUser(email);
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    sendVerificationCode(email);
+    return res.status(200).json({
+      message:
+        "Verification code was sent successfully. Please check your email inbox or spam folder.",
+    });
+  } catch (error) {
+    console.error("Error during forgot password", error);
+    return res.status(500).json({ message: "Error during forgot password" });
+  }
+};
+ */
 const setCookie = (res, name, value, options, httpOnly = true) => {
   res.cookie(name, value, {
     httpOnly,
@@ -144,6 +178,24 @@ const setCookie = (res, name, value, options, httpOnly = true) => {
     sameSite: "Strict",
     ...options,
   });
+};
+
+const createToken = (user) => {
+  return jwt.sign(
+    {
+      userID: user.id,
+      name: user.name,
+      userType: user.user_type,
+      account_status: user.account_status,
+      email: user.email,
+      createdAt: user.created_at,
+      lastSignin: user.last_signin,
+      modified_on: user.modified_on,
+      mosqueID: user.mosqueID,
+    },
+    jwtSecretKey,
+    { expiresIn: "365d" }
+  );
 };
 
 // Generate a random verification code

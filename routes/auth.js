@@ -54,10 +54,10 @@ router.post(
 
 router.post(
   "/verify",
+  authMiddleware.verifyToken,
   /*   loginValidation,
   authMiddleware.inputValidation, */
-  /*   authMiddleware.loginLimiter,
-   */ authController.verifyEmail
+  authController.verifyEmail
 );
 
 router.get("/signout", authMiddleware.verifyToken, authController.signout);

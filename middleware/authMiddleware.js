@@ -7,11 +7,18 @@ exports.verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(403).json({ message: "No token provided" });
   }
+
   jwt.verify(token, jwtSecretKey, (err, decoded) => {
     if (err) {
       return res
         .status(401)
         .json({ message: "Unauthorized. Please login", redirectTo: "/" });
+    }
+
+    if (decoded.account_status !== "Active" && req.path !== "/verify") {
+      return res
+        .status(403)
+        .json({ message: `Your account is ${decoded.account_status}.` });
     }
     req.body.user = decoded;
     next();
