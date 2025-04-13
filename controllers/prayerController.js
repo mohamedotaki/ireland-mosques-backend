@@ -20,7 +20,7 @@ exports.updatePrayerTime = async (req, res, next) => {
         prayerID
       );
       if (updated) {
-        return res.status(200).json({ message: "Iquamh updated" });
+        return res.status(200).json({ message: "Iquamh time updated" });
       } else {
         return res.status(400).json({ message: "Failed to update Iquamh" });
       }
@@ -33,10 +33,13 @@ exports.updatePrayerTime = async (req, res, next) => {
       if (updated) {
         return res.status(200).json({ message: "Adhan updated" });
       } else {
-        return res.status(400).json({ message: "Failed to update Adhan" });
+        return res.status(400).json({
+          message: "You dont have permission to update this adhan time",
+        });
       }
     }
   } catch (error) {
     console.error(error);
+    return res.status(400).json({ message: "Failed to update prayer time" });
   }
 };

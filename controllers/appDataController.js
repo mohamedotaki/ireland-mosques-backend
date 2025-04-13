@@ -40,6 +40,7 @@ exports.checkForNewData = async (req, res, next) => {
               createdAt: dbUser.created_at,
               lastSignin: dbUser.last_signin,
               modified_on: dbUser.modified_on,
+              mosqueID: dbUser.mosqueID,
             };
             const token = createToken(dbUser);
             res.cookie("Authorization", token, {
@@ -55,6 +56,7 @@ exports.checkForNewData = async (req, res, next) => {
       }
     }
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
+    console.log(SQLmosques);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
       res.status(200).json({ mosques, newUpdateDate, user });

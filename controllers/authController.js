@@ -47,6 +47,7 @@ exports.signin = async (req, res) => {
         createdAt: dbUser.created_at,
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
+        mosqueID: dbUser.mosqueID,
       },
     });
   } catch (error) {
@@ -94,6 +95,7 @@ exports.verifyEmail = async (req, res) => {
         createdAt: dbUser.created_at,
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
+        mosqueID: dbUser.mosqueID,
       },
       message: "Email verified successfully",
     });
@@ -131,6 +133,7 @@ exports.signup = async (req, res, next) => {
         createdAt: dbUser.created_at,
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
+        mosqueID: dbUser.mosqueID,
       },
       message:
         "Verification code was sent successfully. Please check your email inbox or spam folder.",

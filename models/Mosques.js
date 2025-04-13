@@ -115,6 +115,19 @@ const updateMosque = async (mosque_id, fieldsToUpdate, connection = pool) => {
   }
 };
 
+const updateModifiedDate = async (mosque_id) => {
+  try {
+    const [result] = await connection.execute(
+      `UPDATE mosques SET last_update WHERE id = ?`,
+      [mosque_id]
+    );
+    return result.affectedRows;
+  } catch (error) {
+    console.error("Error updating mosque:", error);
+    throw new Error("Failed to update mosque.");
+  }
+};
+
 const deleteMosque = async (mosque_id) => {
   try {
     const [result] = await pool.execute("DELETE FROM mosques WHERE id = ?", [
