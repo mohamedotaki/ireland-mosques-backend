@@ -6,8 +6,8 @@ const transporter = nodemailer.createTransport({
   port: 465, // Use 465 for SSL or 587 for TLS
   secure: true, // Set to true for SSL
   auth: {
-    user: "noreply@mosqueapp.alotaki.com", // Replace with your email address
-    pass: "j({oKnYJih~A", // Replace with your email password (or app password)
+    user: process.env.email_username || "noreply@mosqueapp.alotaki.com", // Replace with your email address
+    pass: process.env.email_password || "j({oKnYJih~A", // Replace with your email password (or app password)
   },
 });
 

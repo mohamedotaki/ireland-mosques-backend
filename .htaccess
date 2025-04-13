@@ -1,17 +1,20 @@
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
-PassengerAppRoot "/home/alottpil/api-nourfoods.seventhbyte.com"
+PassengerAppRoot "/home/alottpil/irelandmuslimsapi.alotaki.com"
 PassengerBaseURI "/"
-PassengerNodejs "/home/alottpil/nodevenv/api-nourfoods.seventhbyte.com/14/bin/node"
+PassengerNodejs "/home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/10/bin/node"
 PassengerAppType node
 PassengerStartupFile index.js
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 # DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
 <IfModule Litespeed>
+SetEnv appURL https://irelandmuslimsapi.alotaki.com/
+SetEnv port 3001
+SetEnv email_username noreply@mosqueapp.alotaki.com
+SetEnv email_password j({oKnYJih~A
 SetEnv db_host localhost
 SetEnv db_port 3306
-SetEnv key 1234qsfg
-SetEnv db_user alottpil_nourfoods_user
-SetEnv db_name alottpil_noorfoods_dispatch_209
-SetEnv db_pass [ubIx,?1nh%$
+SetEnv db_user irelandMosquesUser
+SetEnv db_pass uPAmO+eX&e+P
+SetEnv db_name alottpil_ireland_mosques
 </IfModule>
 # DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
