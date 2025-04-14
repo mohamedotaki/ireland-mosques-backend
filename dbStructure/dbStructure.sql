@@ -16,27 +16,29 @@
 
 
 -- Dumping database structure for ireland_mosques
+DROP DATABASE IF EXISTS `ireland_mosques`;
 CREATE DATABASE IF NOT EXISTS `ireland_mosques` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `ireland_mosques`;
 
 -- Dumping structure for table ireland_mosques.feedbacks
+DROP TABLE IF EXISTS `feedbacks`;
 CREATE TABLE IF NOT EXISTS `feedbacks` (
-  `feedback_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mosque_id` int(11) DEFAULT NULL,
   `name` char(50) NOT NULL DEFAULT '',
   `email` char(50) NOT NULL DEFAULT '',
   `message` text NOT NULL,
   `type` enum('App','Mosque') NOT NULL,
   `statues` enum('Completed','Not Completed') NOT NULL DEFAULT 'Not Completed',
-  PRIMARY KEY (`feedback_id`) USING BTREE,
+  PRIMARY KEY (`id`),
   KEY `FK_feedbacks_mosques` (`mosque_id`),
   CONSTRAINT `FK_feedbacks_mosques` FOREIGN KEY (`mosque_id`) REFERENCES `mosques` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Dumping data for table ireland_mosques.feedbacks: ~0 rows (approximately)
-DELETE FROM `feedbacks`;
 
 -- Dumping structure for table ireland_mosques.mosques
+DROP TABLE IF EXISTS `mosques`;
 CREATE TABLE IF NOT EXISTS `mosques` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` char(100) NOT NULL DEFAULT '0',
@@ -49,20 +51,19 @@ CREATE TABLE IF NOT EXISTS `mosques` (
   `latitude` float DEFAULT NULL,
   `longitude` float DEFAULT NULL,
   `iban` char(150) DEFAULT NULL,
-  `last_update` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8;
 
 -- Dumping data for table ireland_mosques.mosques: ~2 rows (approximately)
-DELETE FROM `mosques`;
-INSERT INTO `mosques` (`id`, `name`, `address`, `eircode`, `location`, `contact_number`, `mosque_status`, `website`, `latitude`, `longitude`, `iban`, `last_update`) VALUES
-	(27, 'Al Kausar', '3 Sherwood Ave, Hazelhill, Ballyhaunis, Co. Mayo', 'F35 DY95', 'Ballyhaunis', '1234567890', 'Active', 'www.seventhbyte.com', 53.7599, -8.77131, 'IE28AIBK93744421240194', '2025-04-09 21:40:13'),
-	(28, 'updated Mosque', 'hgjhgj', 'hgjhj', 'Carlow', '657657567', 'Pending', 'ghjhg', 53.7663, -8.78225, 'ytjytjyt', '2025-04-08 20:51:13');
+INSERT IGNORE INTO `mosques` (`id`, `name`, `address`, `eircode`, `location`, `contact_number`, `mosque_status`, `website`, `latitude`, `longitude`, `iban`) VALUES
+	(27, 'Ballyhanins', NULL, 'F35 DF89', 'Ballyhaunis', '1234567890', 'Pending', NULL, 53.7599, -8.77131, NULL),
+	(28, 'test mosque', 'hgjhgj', 'hgjhj', 'Carlow', '657657567', 'Pending', 'ghjhg', 53.7663, -8.78225, 'ytjytjyt');
 
 -- Dumping structure for table ireland_mosques.posts
+DROP TABLE IF EXISTS `posts`;
 CREATE TABLE IF NOT EXISTS `posts` (
-  `post_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mosque_id` int(11) NOT NULL,
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int(11) NOT NULL,
@@ -70,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `header` char(150) NOT NULL,
   `contant` mediumtext NOT NULL,
   `header_image` int(11) DEFAULT NULL,
-  PRIMARY KEY (`post_id`) USING BTREE,
+  PRIMARY KEY (`id`),
   KEY `FK_news_mosques` (`mosque_id`),
   KEY `FK_news_admins` (`created_by`),
   KEY `FK_news_admins_2` (`updated_by`),
@@ -80,11 +81,11 @@ CREATE TABLE IF NOT EXISTS `posts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Dumping data for table ireland_mosques.posts: ~0 rows (approximately)
-DELETE FROM `posts`;
 
 -- Dumping structure for table ireland_mosques.prayer_data
+DROP TABLE IF EXISTS `prayer_data`;
 CREATE TABLE IF NOT EXISTS `prayer_data` (
-  `prayer_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mosque_id` int(11) NOT NULL,
   `prayer_name` enum('Fajr','Shurooq','Dhuhr','Asr','Maghrib','Isha','Jummuah') NOT NULL DEFAULT 'Fajr',
   `adhan_time` time DEFAULT NULL,
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `prayer_data` (
   `iquamh_offset` tinyint(4) DEFAULT NULL,
   `modified_by` int(11) DEFAULT NULL,
   `last_time_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`prayer_id`) USING BTREE,
+  PRIMARY KEY (`id`),
   KEY `FK_prayer_data_mosques` (`mosque_id`),
   KEY `FK_prayer_data_users` (`modified_by`),
   CONSTRAINT `FK_prayer_data_mosques` FOREIGN KEY (`mosque_id`) REFERENCES `mosques` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -101,35 +102,35 @@ CREATE TABLE IF NOT EXISTS `prayer_data` (
 ) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8;
 
 -- Dumping data for table ireland_mosques.prayer_data: ~7 rows (approximately)
-DELETE FROM `prayer_data`;
-INSERT INTO `prayer_data` (`prayer_id`, `mosque_id`, `prayer_name`, `adhan_time`, `adhan_locked`, `iquamh_time`, `iquamh_offset`, `modified_by`, `last_time_modified`) VALUES
-	(90, 27, 'Fajr', '06:29:19', 1, '04:41:48', NULL, NULL, '2025-04-09 01:54:51'),
+INSERT IGNORE INTO `prayer_data` (`id`, `mosque_id`, `prayer_name`, `adhan_time`, `adhan_locked`, `iquamh_time`, `iquamh_offset`, `modified_by`, `last_time_modified`) VALUES
+	(90, 27, 'Fajr', NULL, 1, NULL, NULL, NULL, '2025-01-26 20:50:08'),
 	(91, 27, 'Shurooq', NULL, 1, NULL, NULL, NULL, '2025-01-26 20:50:08'),
-	(92, 27, 'Dhuhr', '02:10:48', 1, NULL, NULL, NULL, '2025-03-11 02:10:49'),
+	(92, 27, 'Dhuhr', NULL, 1, NULL, NULL, NULL, '2025-01-26 20:50:08'),
 	(93, 27, 'Asr', NULL, 1, NULL, NULL, NULL, '2025-01-26 20:50:08'),
 	(94, 27, 'Maghrib', NULL, 1, NULL, NULL, NULL, '2025-01-26 20:50:08'),
-	(95, 27, 'Isha', '23:10:51', 0, NULL, NULL, NULL, '2025-04-09 01:51:20'),
-	(96, 27, 'Jummuah', '01:56:47', 0, '01:53:37', NULL, NULL, '2025-04-09 01:56:47');
+	(95, 27, 'Isha', NULL, 0, NULL, NULL, NULL, '2025-01-26 20:50:08'),
+	(96, 27, 'Jummuah', NULL, 0, NULL, NULL, NULL, '2025-01-26 20:50:08');
 
 -- Dumping structure for table ireland_mosques.users
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `mosque_id` int(11) NOT NULL DEFAULT '0',
   `name` char(70) NOT NULL,
   `email` char(100) NOT NULL,
   `contact_number` char(100) DEFAULT NULL,
   `password` text NOT NULL,
   `user_type` enum('User','Admin','Owner') NOT NULL DEFAULT 'User',
-  `account_status` enum('Active','Pending','Blocked','inactive') NOT NULL DEFAULT 'Pending',
+  `acount_status` enum('Active','Pending','Blocked','inactive') NOT NULL DEFAULT 'Active',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_signin` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `email` (`email`),
+  KEY `FK_users_mosques` (`mosque_id`),
+  CONSTRAINT `FK_users_mosques` FOREIGN KEY (`mosque_id`) REFERENCES `mosques` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Dumping data for table ireland_mosques.users: ~1 rows (approximately)
-DELETE FROM `users`;
-INSERT INTO `users` (`id`, `name`, `email`, `contact_number`, `password`, `user_type`, `account_status`, `created_at`, `last_signin`) VALUES
-	(35, 'Mohamed Otaki', 'mohotaki@hotmail.com', '0892201526', '$2a$10$pFg8geXQgAPddR9LNSKXweUN34b1wqsdKKVmAVDwPh5Fnb1NmJ2dS', 'Admin', 'Active', '2025-04-03 20:40:50', '2025-04-03 20:40:50');
+-- Dumping data for table ireland_mosques.users: ~0 rows (approximately)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

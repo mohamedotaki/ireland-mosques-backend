@@ -12,9 +12,11 @@ exports.updatePrayerTime = async (req, res, next) => {
         .status(403)
         .json({ message: "You are not authorized to update this mosque" });
     }
+    const now = new Date()
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
+        now,
         offset,
         mosqueID,
         prayerID
@@ -27,6 +29,7 @@ exports.updatePrayerTime = async (req, res, next) => {
     } else {
       const updated = await prayerData.updateAdhan(
         newPrayerTime,
+        now,
         mosqueID,
         prayerID
       );
