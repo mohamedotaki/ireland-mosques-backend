@@ -23,6 +23,7 @@ exports.checkForNewData = async (req, res, next) => {
     const token = req.cookies.Authorization;
     const { userLastUpdate } = req.query;
     const newUpdateDate = new Date();
+    console.error(userLastUpdate);
     let user = null;
     if (token) {
       try {

@@ -24,7 +24,13 @@ const createPrayerData = async (mosque_id, connection = pool) => {
   return inserted_prayers.affectedRows;
 };
 
-const updateIquamh = async (iquamh_time,updated_at, iquamh_offset, mosque_id, id) => {
+const updateIquamh = async (
+  iquamh_time,
+  updated_at,
+  iquamh_offset,
+  mosque_id,
+  id
+) => {
   if (iquamh_time && iquamh_offset) {
     throw Error("You can set only fixed time or offset time");
   } else {
@@ -59,10 +65,10 @@ const getAllPrayersByMosqueID = async (mosque_ids) => {
   }
 };
 
-const updateAdhan = async (time,updated_at, mosque_id, id) => {
+const updateAdhan = async (time, updated_at, mosque_id, id) => {
   const [rows] = await pool.execute(
     `UPDATE prayer_data SET adhan_time =? , adhan_modified_on=? WHERE mosque_id = ? AND prayer_id = ? AND (adhan_locked IS NULL OR adhan_locked = FALSE)`,
-    [time || null, updated_at, mosque_id, id]
+    [time, updated_at, mosque_id, id]
   );
   return rows.affectedRows;
 };
