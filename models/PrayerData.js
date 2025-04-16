@@ -64,7 +64,7 @@ const getAllPrayersByMosqueID = async (mosque_ids) => {
     throw new Error("Failed to retrieve prayers.");
   }
 };
-//update adhan time
+//update adhan times
 const updateAdhan = async (time, updated_at, mosque_id, id) => {
   const [rows] = await pool.execute(
     `UPDATE prayer_data SET adhan_time =? , adhan_modified_on=? WHERE mosque_id = ? AND prayer_id = ? AND (adhan_locked IS NULL OR adhan_locked = FALSE)`,
