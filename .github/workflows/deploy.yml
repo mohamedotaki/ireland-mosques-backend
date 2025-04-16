@@ -25,7 +25,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           USERNAME: ${{ secrets.CPANEL_USERNAME }}
-          REMOTE_PATH: ${{ secrets.BACKEND_REMOTE_PATH }} # /home/user/backend
+          REMOTE_PATH: ${{ secrets.REMOTE_PATH }} # /home/user/backend
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           echo "$SSH_PRIVATE_KEY" > key.pem
