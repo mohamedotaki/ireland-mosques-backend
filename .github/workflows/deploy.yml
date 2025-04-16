@@ -15,7 +15,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: "14"
 
       - name: Install dependencies
         run: npm install
@@ -32,6 +32,12 @@ jobs:
           chmod 600 key.pem
           eval "$(ssh-agent -s)"
           ssh-add key.pem
+
+          # Check REMOTE_PATH isn't dangerously empty or root
+          if [[ -z "$REMOTE_PATH" || "$REMOTE_PATH" == "/" || "$REMOTE_PATH" == "/home/$USERNAME" ]]; then
+            echo "❌ Aborting deploy: Unsafe REMOTE_PATH"
+            exit 1
+          fi
 
           # Upload backend source code
           rsync -avz --delete-after -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" . $USERNAME@$SERVER_IP:$REMOTE_PATH
