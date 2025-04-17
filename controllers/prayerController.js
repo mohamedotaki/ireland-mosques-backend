@@ -12,7 +12,7 @@ exports.updatePrayerTime = async (req, res, next) => {
         .status(403)
         .json({ message: "You are not authorized to update this mosque" });
     }
-    const now = new Date()
+    const now = getDateTimeString(new Date());
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
@@ -45,4 +45,17 @@ exports.updatePrayerTime = async (req, res, next) => {
     console.error(error);
     return res.status(400).json({ message: "Failed to update prayer time" });
   }
+};
+
+const getDateTimeString = (date) => {
+  const pad = (num) => num.toString().padStart(2, "0");
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1); // Months are 0-indexed, so add 1
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
