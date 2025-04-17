@@ -16,7 +16,7 @@ exports.updatePrayerTime = async (req, res, next) => {
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
-        now,
+        "2025-01-01 00:00:00",
         offset,
         mosqueID,
         prayerID
