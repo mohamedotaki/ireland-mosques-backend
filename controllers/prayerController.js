@@ -13,10 +13,13 @@ exports.updatePrayerTime = async (req, res, next) => {
         .json({ message: "You are not authorized to update this mosque" });
     }
     const now = getDateTimeString(new Date());
+    console.log(now);
+    console.error(now);
+
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
-        "2025-01-01 00:00:00",
+        now,
         offset,
         mosqueID,
         prayerID
