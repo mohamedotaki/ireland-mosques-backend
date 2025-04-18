@@ -13,11 +13,11 @@ exports.updatePrayerTime = async (req, res, next) => {
         .status(403)
         .json({ message: "You are not authorized to update this mosque" });
     }
-    const now = moment().format("YYYY-MM-DD HH:mm:ss");
+    const now = moment().utc().format("YYYY-MM-DD HH:mm:ss");
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
-        "2025-01-01 17:30:00",
+        now,
         offset,
         mosqueID,
         prayerID
@@ -28,9 +28,6 @@ exports.updatePrayerTime = async (req, res, next) => {
         return res.status(400).json({ message: "Failed to update Iquamh" });
       }
     } else {
-      const [rows, fields] = await pool.query("SELECT NOW()");
-      console.error("Current Time in UTC:", rows[0]["NOW()"]);
-      console.error("Current Time:", now);
       const updated = await prayerData.updateAdhan(
         newPrayerTime,
         now,

@@ -3,11 +3,12 @@ const User = require("../models/Users");
 const time_table = require("../timeTable/timeTable.json");
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
+const moment = require("moment-timezone");
 
 //create routes
 exports.appLunch = async (req, res, next) => {
   try {
-    const now = moment().format("YYYY-MM-DD HH:mm:ss");
+    const now = moment().utc().format("YYYY-MM-DD HH:mm:ss");
     const SQLmosques = await Mosques.getAllMosquesWithPrayers();
     const mosques = createMosqueObject(SQLmosques);
     res.status(200).json({ mosques, newUpdateDate: now });
@@ -22,8 +23,7 @@ exports.checkForNewData = async (req, res, next) => {
   try {
     const token = req.cookies.Authorization;
     const { userLastUpdate } = req.query;
-    const now = moment().format("YYYY-MM-DD HH:mm:ss");
-    console.error(userLastUpdate);
+    const now = moment().utc().format("YYYY-MM-DD HH:mm:ss");
     let user = null;
     if (token) {
       try {
@@ -57,7 +57,6 @@ exports.checkForNewData = async (req, res, next) => {
       }
     }
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
-    console.log(SQLmosques);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
       res.status(200).json({ mosques, newUpdateDate: now, user });
@@ -99,8 +98,12 @@ const createMosqueObject = (mosques, prayers) => {
       adhan_locked: mosque.adhan_locked,
       iquamh_time: mosque.iquamh_time,
       iquamh_offset: mosque.iquamh_offset,
-      adhan_modified_on: mosque.adhan_modified_on,
-      iquamh_modified_on: mosque.iquamh_modified_on,
+      adhan_modified_on: moment(mosque.adhan_modified_on).format(
+        "YYYY-MM-DD HH:mm:ss"
+      ),
+      iquamh_modified_on: moment(mosque.iquamh_modified_on).format(
+        "YYYY-MM-DD HH:mm:ss"
+      ),
     });
 
     // Add the order detail to the order's details array
