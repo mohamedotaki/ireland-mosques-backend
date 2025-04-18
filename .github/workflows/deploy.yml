@@ -44,6 +44,9 @@ jobs:
 
           # Restart backend on server
           ssh -p $SSH_PORT -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
+
+            export TZ="Europe/Dublin"
+
             source /home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/14/bin/activate && cd /home/alottpil/irelandmuslimsapi.alotaki.com
             npm install --omit=dev
             pkill -f "node index.js" || true
