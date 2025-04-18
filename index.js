@@ -13,8 +13,7 @@ const app = express();
 const PORT = process.env.port || 3001;
 
 moment.tz.setDefault("Europe/Dublin");
-
-console.log("Current Time:", moment().format("YYYY-MM-DD HH:mm:ss"));
+moment.defaultFormat = "YYYY-MM-DD HH:mm:ss";
 
 app.use(
   cors({
