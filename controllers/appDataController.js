@@ -7,10 +7,10 @@ const jwtSecretKey = process.env.key || "TestingKey";
 //create routes
 exports.appLunch = async (req, res, next) => {
   try {
-    const newUpdateDate = new Date();
+    const now = moment().format("YYYY-MM-DD HH:mm:ss");
     const SQLmosques = await Mosques.getAllMosquesWithPrayers();
     const mosques = createMosqueObject(SQLmosques);
-    res.status(200).json({ mosques, newUpdateDate });
+    res.status(200).json({ mosques, newUpdateDate: now });
   } catch (error) {
     console.error(error);
   } finally {
@@ -22,7 +22,7 @@ exports.checkForNewData = async (req, res, next) => {
   try {
     const token = req.cookies.Authorization;
     const { userLastUpdate } = req.query;
-    const newUpdateDate = new Date();
+    const now = moment().format("YYYY-MM-DD HH:mm:ss");
     console.error(userLastUpdate);
     let user = null;
     if (token) {
@@ -60,9 +60,9 @@ exports.checkForNewData = async (req, res, next) => {
     console.log(SQLmosques);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
-      res.status(200).json({ mosques, newUpdateDate, user });
+      res.status(200).json({ mosques, newUpdateDate: now, user });
     } else {
-      res.status(200).json({ mosques: [], newUpdateDate, user });
+      res.status(200).json({ mosques: [], newUpdateDate: now, user });
     }
   } catch (error) {
     console.error(error);

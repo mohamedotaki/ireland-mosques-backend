@@ -45,19 +45,7 @@ jobs:
           # Restart backend on server
           ssh -p $SSH_PORT -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
 
-            export TZ="Europe/Dublin"
-
             source /home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/14/bin/activate && cd /home/alottpil/irelandmuslimsapi.alotaki.com
             npm install --omit=dev
             pkill -f "node index.js" || true
-            nohup node index.js > out.log 2>&1 &
-            
-            # Check if the Node.js process is running
-            sleep 5  # Wait for a few seconds to allow the process to start
-            if pgrep -f "node index.js" > /dev/null; then
-              echo "✅ Node.js app successfully restarted"
-            else
-              echo "❌ Failed to start Node.js app"
-              exit 1
-            fi
           ENDSSH
