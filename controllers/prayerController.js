@@ -27,9 +27,12 @@ exports.updatePrayerTime = async (req, res, next) => {
         return res.status(400).json({ message: "Failed to update Iquamh" });
       }
     } else {
+      const [rows, fields] = await pool.query("SELECT NOW()");
+      console.error("Current Time in UTC:", rows[0]["NOW()"]);
+      console.error("Current Time:", now);
       const updated = await prayerData.updateAdhan(
         newPrayerTime,
-        now.toString(),
+        now,
         mosqueID,
         prayerID
       );
