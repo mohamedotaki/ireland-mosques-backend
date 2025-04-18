@@ -47,4 +47,5 @@ jobs:
             source /home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/14/bin/activate && cd /home/alottpil/irelandmuslimsapi.alotaki.com
             npm install --omit=dev
             pkill -f "node index.js" || true
+            nohup node index.js > out.log 2>&1 &
           ENDSSH
