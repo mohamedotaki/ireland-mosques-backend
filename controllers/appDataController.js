@@ -59,11 +59,13 @@ exports.checkForNewData = async (req, res, next) => {
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
-      res.status(200).json({ mosques, newUpdateDate: moment.utc(now), user });
+      res
+        .status(200)
+        .json({ mosques, newUpdateDate: moment.utc(now).tz(), user });
     } else {
       res
         .status(200)
-        .json({ mosques: [], newUpdateDate: moment.utc(now), user });
+        .json({ mosques: [], newUpdateDate: moment.utc(now).tz(), user });
     }
   } catch (error) {
     console.error(error);
@@ -102,9 +104,11 @@ const createMosqueObject = (mosques, prayers) => {
       iquamh_offset: mosque.iquamh_offset,
       adhan_modified_on: moment
         .utc(mosque.adhan_modified_on)
+        .tz()
         .format("YYYY-MM-DD HH:mm:ss"),
       iquamh_modified_on: moment
         .utc(mosque.iquamh_modified_on)
+        .tz()
         .format("YYYY-MM-DD HH:mm:ss"),
     });
 
