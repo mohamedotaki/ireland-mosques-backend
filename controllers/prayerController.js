@@ -1,7 +1,7 @@
 const Mosques = require("../models/Mosques");
 const prayerData = require("../models/PrayerData");
 const pool = require("../config/db");
-const { getNowUTC } = require("../utils/datetime");
+const { getNowUTC, getNowLocal } = require("../utils/datetime");
 
 //create routes
 exports.updatePrayerTime = async (req, res, next) => {
@@ -16,7 +16,7 @@ exports.updatePrayerTime = async (req, res, next) => {
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
-        getNowUTC(),
+        getNowLocal(),
         offset,
         mosqueID,
         prayerID
@@ -29,7 +29,7 @@ exports.updatePrayerTime = async (req, res, next) => {
     } else {
       const updated = await prayerData.updateAdhan(
         newPrayerTime,
-        getNowUTC(),
+        getNowLocal(),
         mosqueID,
         prayerID
       );

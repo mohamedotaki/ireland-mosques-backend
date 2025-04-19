@@ -40,7 +40,7 @@ const getAllUpdatedMosques = async (userLastUpdate) => {
   try {
     console.log(userLastUpdate);
     const [rows] = await pool.execute(
-      "SELECT * FROM mosques left JOIN prayer_data ON prayer_data.mosque_id = mosques.id WHERE last_update > ?",
+      "SELECT * FROM mosques left JOIN prayer_data ON prayer_data.mosque_id = mosques.id WHERE last_update >= ?",
       [userLastUpdate]
     );
     return rows;

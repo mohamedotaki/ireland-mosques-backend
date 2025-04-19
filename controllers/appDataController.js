@@ -29,7 +29,7 @@ exports.checkForNewData = async (req, res, next) => {
         if (verified) {
           const dbUser = await User.getModifiedUser(
             verified.userID,
-            toUTC(userLastUpdate)
+            userLastUpdate
           );
           if (dbUser) {
             user = {
@@ -54,9 +54,7 @@ exports.checkForNewData = async (req, res, next) => {
         console.error(error);
       }
     }
-    const SQLmosques = await Mosques.getAllUpdatedMosques(
-      toUTC(userLastUpdate)
-    );
+    const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
       res.status(200).json({ mosques, newUpdateDate: getNowLocal(), user });
@@ -98,8 +96,8 @@ const createMosqueObject = (mosques, prayers) => {
       adhan_locked: mosque.adhan_locked,
       iquamh_time: mosque.iquamh_time,
       iquamh_offset: mosque.iquamh_offset,
-      adhan_modified_on: toLocalTime(mosque.adhan_modified_on),
-      iquamh_modified_on: toLocalTime(mosque.iquamh_modified_on),
+      adhan_modified_on: mosque.adhan_modified_on,
+      iquamh_modified_on: mosque.iquamh_modified_on,
     });
 
     // Add the order detail to the order's details array
