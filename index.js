@@ -6,14 +6,10 @@ const feedbacksRoutes = require("./routes/feedbacks");
 const appDataRoutes = require("./routes/appData");
 const authRoute = require("./routes/auth");
 const prayersRoute = require("./routes/prayers");
-const moment = require("moment-timezone");
 const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = process.env.port || 3001;
-
-moment.tz.setDefault("Europe/Dublin");
-moment.defaultFormat = "YYYY-MM-DD HH:mm:ss";
 
 app.use(
   cors({

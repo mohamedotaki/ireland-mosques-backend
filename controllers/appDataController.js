@@ -3,15 +3,14 @@ const User = require("../models/Users");
 const time_table = require("../timeTable/timeTable.json");
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
-const moment = require("moment-timezone");
+const { toUTC, toLocalTime, getNowLocal } = require("../utils/datetime");
 
 //create routes
 exports.appLunch = async (req, res, next) => {
   try {
-    const now = moment().utc().format("YYYY-MM-DD HH:mm:ss");
     const SQLmosques = await Mosques.getAllMosquesWithPrayers();
     const mosques = createMosqueObject(SQLmosques);
-    res.status(200).json({ mosques, newUpdateDate: now });
+    res.status(200).json({ mosques, newUpdateDate: getNowLocal() });
   } catch (error) {
     console.error(error);
   } finally {
@@ -23,7 +22,6 @@ exports.checkForNewData = async (req, res, next) => {
   try {
     const token = req.cookies.Authorization;
     const { userLastUpdate } = req.query;
-    const now = moment().utc().format("YYYY-MM-DD HH:mm:ss");
     let user = null;
     if (token) {
       try {
@@ -31,7 +29,7 @@ exports.checkForNewData = async (req, res, next) => {
         if (verified) {
           const dbUser = await User.getModifiedUser(
             verified.userID,
-            userLastUpdate
+            toUTC(userLastUpdate)
           );
           if (dbUser) {
             user = {
@@ -56,16 +54,14 @@ exports.checkForNewData = async (req, res, next) => {
         console.error(error);
       }
     }
-    const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
+    const SQLmosques = await Mosques.getAllUpdatedMosques(
+      toUTC(userLastUpdate)
+    );
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
-      res
-        .status(200)
-        .json({ mosques, newUpdateDate: moment.utc(now).tz(), user });
+      res.status(200).json({ mosques, newUpdateDate: getNowLocal(), user });
     } else {
-      res
-        .status(200)
-        .json({ mosques: [], newUpdateDate: moment.utc(now).tz(), user });
+      res.status(200).json({ mosques: [], newUpdateDate: getNowLocal(), user });
     }
   } catch (error) {
     console.error(error);
@@ -102,14 +98,8 @@ const createMosqueObject = (mosques, prayers) => {
       adhan_locked: mosque.adhan_locked,
       iquamh_time: mosque.iquamh_time,
       iquamh_offset: mosque.iquamh_offset,
-      adhan_modified_on: moment
-        .utc(mosque.adhan_modified_on)
-        .tz()
-        .format("YYYY-MM-DD HH:mm:ss"),
-      iquamh_modified_on: moment
-        .utc(mosque.iquamh_modified_on)
-        .tz()
-        .format("YYYY-MM-DD HH:mm:ss"),
+      adhan_modified_on: toLocalTime(mosque.adhan_modified_on),
+      iquamh_modified_on: toLocalTime(mosque.iquamh_modified_on),
     });
 
     // Add the order detail to the order's details array

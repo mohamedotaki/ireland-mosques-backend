@@ -1,7 +1,7 @@
 const Mosques = require("../models/Mosques");
 const prayerData = require("../models/PrayerData");
 const pool = require("../config/db");
-const moment = require("moment-timezone");
+const { getNowUTC } = require("../utils/datetime");
 
 //create routes
 exports.updatePrayerTime = async (req, res, next) => {
@@ -13,11 +13,10 @@ exports.updatePrayerTime = async (req, res, next) => {
         .status(403)
         .json({ message: "You are not authorized to update this mosque" });
     }
-    const now = moment().utc().tz().format("YYYY-MM-DD HH:mm:ss");
     if (isIqamah) {
       const updated = await prayerData.updateIquamh(
         newPrayerTime,
-        now,
+        getNowUTC(),
         offset,
         mosqueID,
         prayerID
@@ -30,7 +29,7 @@ exports.updatePrayerTime = async (req, res, next) => {
     } else {
       const updated = await prayerData.updateAdhan(
         newPrayerTime,
-        now,
+        getNowUTC(),
         mosqueID,
         prayerID
       );
