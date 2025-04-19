@@ -1,7 +1,7 @@
 const Mosques = require("../models/Mosques");
 const prayerData = require("../models/PrayerData");
 const pool = require("../config/db");
-const { getNowUTC, getNowLocal } = require("../utils/datetime");
+const { getNowLocal } = require("../utils/datetime");
 
 //create routes
 exports.updatePrayerTime = async (req, res, next) => {

@@ -3,14 +3,15 @@ const User = require("../models/Users");
 const time_table = require("../timeTable/timeTable.json");
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
-const { toUTC, toLocalTime, getNowLocal } = require("../utils/datetime");
+const { getNowLocal } = require("../utils/datetime");
 
 //create routes
 exports.appLunch = async (req, res, next) => {
   try {
+    const newUpdateDate = getNowLocal();
     const SQLmosques = await Mosques.getAllMosquesWithPrayers();
     const mosques = createMosqueObject(SQLmosques);
-    res.status(200).json({ mosques, newUpdateDate: getNowLocal() });
+    res.status(200).json({ mosques, newUpdateDate });
   } catch (error) {
     console.error(error);
   } finally {
@@ -54,12 +55,13 @@ exports.checkForNewData = async (req, res, next) => {
         console.error(error);
       }
     }
+    const newUpdateDate = getNowLocal();
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
     if (SQLmosques.length > 0) {
       const mosques = createMosqueObject(SQLmosques);
-      res.status(200).json({ mosques, newUpdateDate: getNowLocal(), user });
+      res.status(200).json({ mosques, newUpdateDate, user });
     } else {
-      res.status(200).json({ mosques: [], newUpdateDate: getNowLocal(), user });
+      res.status(200).json({ mosques: [], user });
     }
   } catch (error) {
     console.error(error);
