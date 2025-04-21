@@ -4,6 +4,8 @@ const time_table = require("../timeTable/timeTable.json");
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
 const { getNowLocal } = require("../utils/datetime");
+const { use } = require("../routes/mosques");
+const moment = require("moment-timezone");
 
 //create routes
 exports.appLunch = async (req, res, next) => {
@@ -44,7 +46,7 @@ exports.checkForNewData = async (req, res, next) => {
             };
             const token = createToken(dbUser);
             res.cookie("Authorization", token, {
-              httpOnly: true,
+              httpOnly: process.env.NODE_ENV === "production",
               secure: process.env.NODE_ENV === "production",
               sameSite: "Strict",
               maxAge: 365 * 24 * 60 * 60 * 1000,
@@ -58,7 +60,7 @@ exports.checkForNewData = async (req, res, next) => {
     const newUpdateDate = getNowLocal();
     const SQLmosques = await Mosques.getAllUpdatedMosques(userLastUpdate);
     if (SQLmosques.length > 0) {
-      const mosques = createMosqueObject(SQLmosques);
+      const mosques = createMosqueObject(SQLmosques, userLastUpdate);
       res.status(200).json({ mosques, newUpdateDate, user });
     } else {
       res.status(200).json({ mosques: [], user });
@@ -68,7 +70,7 @@ exports.checkForNewData = async (req, res, next) => {
   }
 };
 
-const createMosqueObject = (mosques, prayers) => {
+const createMosqueObject = (mosques, userLastUpdate) => {
   const mosquesObject = {};
   mosques.forEach((mosque) => {
     const mosqueID = mosque.id;
@@ -86,7 +88,11 @@ const createMosqueObject = (mosques, prayers) => {
         latitude: mosque.latitude,
         longitude: mosque.longitude,
         iban: mosque.iban,
-        time_table: time_table[mosque.location] || null,
+        time_table: !userLastUpdate
+          ? time_table[mosque.location] || null
+          : moment(userLastUpdate).isBefore(mosque.time_table_update)
+          ? time_table[mosque.location] || null
+          : null,
         prayers: [],
       };
     }

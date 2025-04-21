@@ -1,12 +1,12 @@
 const pool = require("../config/db");
 
 //routes table
-const createMosque = async (mosque, connection = pool) => {
+const createMosque = async (mosque, now, connection = pool) => {
   try {
     const [result] = await connection.execute(
       `INSERT INTO mosques 
-      (name, address, eircode, location, contact_number, website, iban) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (name, address, eircode, location, contact_number, website, iban,last_update,time_table_update) 
+      VALUES (?, ?, ?, ?, ?, ?, ?,?,?)`,
       [
         mosque.name,
         mosque.address || null,
@@ -15,6 +15,8 @@ const createMosque = async (mosque, connection = pool) => {
         mosque.contact_number,
         mosque.website || null,
         mosque.iban || null,
+        now,
+        now,
       ]
     );
     return result.insertId;
@@ -38,10 +40,9 @@ const getAllMosquesWithPrayers = async () => {
 
 const getAllUpdatedMosques = async (userLastUpdate) => {
   try {
-    console.log(userLastUpdate);
     const [rows] = await pool.execute(
-      "SELECT * FROM mosques left JOIN prayer_data ON prayer_data.mosque_id = mosques.id WHERE last_update > ?",
-      [userLastUpdate]
+      "SELECT * FROM mosques left JOIN prayer_data ON prayer_data.mosque_id = mosques.id WHERE last_update > ? OR time_table_update > ?",
+      [userLastUpdate, userLastUpdate]
     );
     return rows;
   } catch (error) {

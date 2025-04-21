@@ -6,14 +6,21 @@ const feedbacksRoutes = require("./routes/feedbacks");
 const appDataRoutes = require("./routes/appData");
 const authRoute = require("./routes/auth");
 const prayersRoute = require("./routes/prayers");
+const postsRoute = require("./routes/posts");
+const compression = require("compression");
+
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = process.env.port || 3001;
+app.use(compression());
+const port = process.env.PORT || 3001;
 
 app.use(
   cors({
-    origin: process.env.app_url || "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://irelandmuslims.alotaki.com"
+        : "http://localhost:3000",
     credentials: true,
   })
 );
@@ -28,6 +35,7 @@ app.use("/api/feedbacks", feedbacksRoutes);
 app.use("/api/app", appDataRoutes);
 app.use("/api/auth", authRoute);
 app.use("/api/prayers", prayersRoute);
+app.use("/api/posts", postsRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -35,6 +43,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });

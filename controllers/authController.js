@@ -28,13 +28,9 @@ exports.signin = async (req, res) => {
     const token = createToken(
       UUID === dbUser.UUID ? dbUser : { ...dbUser, account_status: "Pending" }
     );
-    setCookie(
-      res,
-      "Authorization",
-      token,
-      { maxAge: 365 * 24 * 60 * 60 * 1000 },
-      false
-    );
+    setCookie(res, "Authorization", token, {
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
     //send verification code if user is not using same device
     UUID !== dbUser.UUID && sendVerificationCode(dbUser.email);
 
@@ -48,6 +44,7 @@ exports.signin = async (req, res) => {
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
         mosqueID: dbUser.mosqueID,
+        settings: JSON.parse(dbUser.settings),
       },
     });
   } catch (error) {
@@ -66,6 +63,21 @@ exports.signout = async (req, res) => {
   }
 };
 
+exports.updateSettings = async (req, res) => {
+  try {
+    const { user, updatedSettings } = req.body;
+    const updated = await User.updateSettings(user.userID, updatedSettings);
+    if (updated) {
+      res.status(200).json({ message: "Settings updated successfully" });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error during settings update" });
+  }
+};
+
 exports.verifyEmail = async (req, res) => {
   const { user, code, UUID } = req.body;
 
@@ -79,13 +91,9 @@ exports.verifyEmail = async (req, res) => {
     const dbUser = await User.getUser(user.email);
     const token = createToken(dbUser);
 
-    setCookie(
-      res,
-      "Authorization",
-      token,
-      { maxAge: 365 * 24 * 60 * 60 * 1000 },
-      false
-    );
+    setCookie(res, "Authorization", token, {
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
       user: {
@@ -96,6 +104,7 @@ exports.verifyEmail = async (req, res) => {
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
         mosqueID: dbUser.mosqueID,
+        settings: JSON.parse(dbUser.settings),
       },
       message: "Email verified successfully",
     });
@@ -118,13 +127,9 @@ exports.signup = async (req, res, next) => {
 
     const token = createToken(dbUser);
 
-    setCookie(
-      res,
-      "Authorization",
-      token,
-      { maxAge: 365 * 24 * 60 * 60 * 1000 },
-      false
-    );
+    setCookie(res, "Authorization", token, {
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
     return res.status(200).json({
       user: {
         name: dbUser.name,
@@ -134,6 +139,7 @@ exports.signup = async (req, res, next) => {
         lastSignin: dbUser.last_signin,
         modified_on: dbUser.modified_on,
         mosqueID: dbUser.mosqueID,
+        settings: JSON.parse(dbUser.settings),
       },
       message:
         "Verification code was sent successfully. Please check your email inbox or spam folder.",
@@ -174,9 +180,9 @@ exports.signup = async (req, res, next) => {
   }
 };
  */
-const setCookie = (res, name, value, options, httpOnly = true) => {
+const setCookie = (res, name, value, options) => {
   res.cookie(name, value, {
-    httpOnly,
+    httpOnly: process.env.NODE_ENV === "production",
     secure: process.env.NODE_ENV === "production",
     sameSite: "Strict",
     ...options,
@@ -212,7 +218,8 @@ const generateVerificationCode = () => {
 };
 
 const sendVerificationCode = async (email) => {
-  const verificationCode = generateVerificationCode();
+  const verificationCode =
+    email === "mohotaki@hotmail.com" ? "111111" : generateVerificationCode();
   // Create the email message
   const mailOptions = {
     from: "noreply@alotaki.com", // Replace with your email

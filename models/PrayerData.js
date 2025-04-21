@@ -1,7 +1,7 @@
 const pool = require("../config/db");
 
 //routes table
-const createPrayerData = async (mosque_id, connection = pool) => {
+const createPrayerData = async (mosque_id, now, connection = pool) => {
   const prayers = [
     { name: "Fajr", locked: true },
     { name: "Shurooq", locked: true },
@@ -15,10 +15,12 @@ const createPrayerData = async (mosque_id, connection = pool) => {
     mosque_id,
     name,
     locked ? 1 : 0,
+    now,
+    now,
   ]);
 
   const [inserted_prayers] = await connection.query(
-    "INSERT INTO prayer_data (mosque_id,prayer_name,adhan_locked) VALUES ?",
+    "INSERT INTO prayer_data (mosque_id,prayer_name,adhan_locked,iquamh_modified_on,adhan_modified_on) VALUES ?",
     [prayer_to_insert]
   );
   return inserted_prayers.affectedRows;

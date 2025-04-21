@@ -1,5 +1,0 @@
-deployment:
-  type: nodejs
-  nodejs_version: "14.21.2"
-  npm_package: "package.json"
-  document_root: "irelandmuslimsapi.alotaki.com"

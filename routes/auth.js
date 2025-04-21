@@ -29,6 +29,19 @@ const signupValidation = [
     .withMessage("User phoneNumber is required")
     .isString()
     .withMessage("User phoneNumber must be a string"),
+  body("user.settings")
+    .notEmpty()
+    .withMessage("User settings are required")
+    .isObject()
+    .withMessage("User settings must be a valid object"),
+];
+
+const settingsValidation = [
+  body("updatedSettings")
+    .notEmpty()
+    .withMessage("updatedSettings are required")
+    .isObject()
+    .withMessage("updatedSettings must be a valid object"),
 ];
 
 const sinoutValidation = [
@@ -58,6 +71,14 @@ router.post(
   /*   loginValidation,
   authMiddleware.inputValidation, */
   authController.verifyEmail
+);
+
+router.put(
+  "/settings",
+  authMiddleware.verifyToken,
+  settingsValidation,
+  authMiddleware.inputValidation,
+  authController.updateSettings
 );
 
 router.get("/signout", authMiddleware.verifyToken, authController.signout);

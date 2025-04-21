@@ -4,8 +4,8 @@ const bcrypt = require("bcryptjs");
 const createUser = async (user) => {
   const hashedPassword = await bcrypt.hash(user.password, 10);
   const [rows] = await pool.execute(
-    "INSERT INTO users ( name, email, contact_number,password) VALUES (?, ?, ?, ?)",
-    [user.name, user.email, user.phoneNumber, hashedPassword]
+    "INSERT INTO users ( name, email, contact_number,password,settings) VALUES (?, ?, ?, ?, ?)",
+    [user.name, user.email, user.phoneNumber, hashedPassword, user.settings]
   );
   return rows.insertId;
 };
@@ -55,6 +55,14 @@ const updateUUID = async (id, UUID) => {
   return rows.affectedRows;
 };
 
+const updateSettings = async (userID, settings) => {
+  const [rows] = await pool.query(
+    `UPDATE users SET settings =?  WHERE id = ? `,
+    [JSON.stringify(settings), userID]
+  );
+  return rows.affectedRows;
+};
+
 module.exports = {
   createUser,
   deleteUser,
@@ -63,4 +71,5 @@ module.exports = {
   updateAccountStatus,
   getModifiedUser,
   updateUUID,
+  updateSettings,
 };
