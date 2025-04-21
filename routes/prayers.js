@@ -29,8 +29,10 @@ const prayerChangeValidation = [
   // newPrayerTime: optional if isIqamah is true, otherwise must be a date
   body("newPrayerTime")
     .optional()
-    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .withMessage("newPrayerTime must be in HH:mm 24-hour format"),
+    .custom(
+      (value) => value === null || /^([01]\d|2[0-3]):([0-5]\d)$/.test(value)
+    )
+    .withMessage("newPrayerTime must be in HH:mm 24-hour format or null"),
 
   // offset: required only if isIqamah is true and newPrayerTime is not provided
   body("offset").custom((value, { req }) => {
