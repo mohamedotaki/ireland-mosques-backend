@@ -10,6 +10,10 @@ const newPostValidation = [
   body("post.contant").isString().withMessage("post must be a string"),
 ];
 
+router.delete("/:id", authMiddleware.verifyToken, postsController.deletePost);
+
+router.get("/", postsController.getPost);
+
 // Register user
 router.post(
   "/",
@@ -19,23 +23,12 @@ router.post(
   postsController.createPost
 );
 
-/* // Register user
 router.put(
   "/",
   authMiddleware.verifyToken,
   newPostValidation,
   authMiddleware.inputValidation,
-  prayerController.updatePrayerTime
-); */
-
-/* router.delete(
-  "/",
-  authMiddleware.verifyToken,
-  newPostValidation,
-  authMiddleware.inputValidation,
-  prayerController.updatePrayerTime
-); */
-
-router.get("/", postsController.getPost);
+  postsController.updatePost
+);
 
 module.exports = router;

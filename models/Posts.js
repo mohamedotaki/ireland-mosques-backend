@@ -41,51 +41,11 @@ const getPosts = async (offset, mosque_id) => {
   }
 };
 
-const getPostByID = async (mosque_id) => {
+const updatePost = async (post, user) => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM mosques WHERE id = ?", [
-      mosque_id,
-    ]);
-    return rows[0] || null;
-  } catch (error) {
-    console.error("Error retrieving mosque by ID:", error);
-    throw new Error("Failed to retrieve mosque by ID.");
-  }
-};
-
-const updatePost = async (mosque_id, fieldsToUpdate, connection = pool) => {
-  const allowedFields = [
-    "name",
-    "address",
-    "eircode",
-    "location",
-    "contact_number",
-    "website",
-    "iban",
-  ];
-
-  // Filter out invalid fields
-  const invalidFields = Object.keys(fieldsToUpdate).filter(
-    (field) => !allowedFields.includes(field)
-  );
-  if (invalidFields.length > 0) {
-    throw new Error(`Invalid fields provided: ${invalidFields.join(", ")}.`);
-  }
-
-  if (Object.keys(fieldsToUpdate).length === 0) {
-    throw new Error("No fields to update provided.");
-  }
-
-  // Generate the SET clause dynamically
-  const setClause = Object.keys(fieldsToUpdate)
-    .map((field) => `${field} = ?`)
-    .join(", ");
-  const values = [...Object.values(fieldsToUpdate), mosque_id];
-
-  try {
-    const [result] = await connection.execute(
-      `UPDATE mosques SET ${setClause} WHERE id = ?`,
-      values
+    const [result] = await pool.execute(
+      `UPDATE mosques SET time =?, updated_by=?, contant=? WHERE post_id = ? AND  mosque_id = ?`,
+      [getNowLocal(), user.userID, post.contant, post.post_id, user.mosqueID]
     );
     return result.affectedRows;
   } catch (error) {
@@ -94,11 +54,12 @@ const updatePost = async (mosque_id, fieldsToUpdate, connection = pool) => {
   }
 };
 
-const deletePost = async (mosque_id) => {
+const deletePost = async (postID, mosqueID) => {
   try {
-    const [result] = await pool.execute("DELETE FROM mosques WHERE id = ?", [
-      mosque_id,
-    ]);
+    const [result] = await pool.execute(
+      "DELETE FROM posts WHERE post_id = ? and mosque_id = ?",
+      [postID, mosqueID]
+    );
     return result.affectedRows;
   } catch (error) {
     console.error("Error deleting mosque:", error);
@@ -109,4 +70,5 @@ const deletePost = async (mosque_id) => {
 module.exports = {
   createPost,
   getPosts,
+  deletePost,
 };

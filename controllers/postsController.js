@@ -27,3 +27,38 @@ exports.getPost = async (req, res, next) => {
     console.error(error);
   }
 };
+
+exports.deletePost = async (req, res, next) => {
+  try {
+    const { user } = req.body;
+    const { id } = req.params;
+
+    const deleted = await Posts.deletePost(id, user.mosqueID);
+
+    if (deleted) {
+      res.status(200).json({ message: "Post was deleted" });
+    } else {
+      res.status(404).json({ message: "Post not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "Unkown error" });
+  }
+};
+
+exports.updatePost = async (req, res, next) => {
+  try {
+    const { post, user } = req.body;
+
+    const updated = await Posts.updatePost(post, user);
+
+    if (updated) {
+      res.status(200).json({ message: "Post was updated" });
+    } else {
+      res.status(404).json({ message: "Post not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "Unkown error" });
+  }
+};

@@ -5,7 +5,13 @@ const createUser = async (user) => {
   const hashedPassword = await bcrypt.hash(user.password, 10);
   const [rows] = await pool.execute(
     "INSERT INTO users ( name, email, contact_number,password,settings) VALUES (?, ?, ?, ?, ?)",
-    [user.name, user.email, user.phoneNumber, hashedPassword, user.settings]
+    [
+      user.name,
+      user.email,
+      user.phoneNumber,
+      hashedPassword,
+      JSON.stringify(user.settings),
+    ]
   );
   return rows.insertId;
 };
