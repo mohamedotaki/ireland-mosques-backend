@@ -39,7 +39,7 @@ app.use("/api/posts", postsRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  res.status(500).json({ message: err });
+  res.status(500).json({ message: "Internal Server Error: An unknown error occurred. Please try again later." });
 });
 
 // Start server

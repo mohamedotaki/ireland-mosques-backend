@@ -28,7 +28,12 @@ exports.verifyToken = (req, res, next) => {
 exports.inputValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(422).json({ message: errors.array()[0].msg });
+    let message =""
+    errors.array().map((e,index)=>{
+      message += `${index+1}-${e.msg}\n`
+
+    })
+    return res.status(422).json({  message });
   } else {
     next();
   }

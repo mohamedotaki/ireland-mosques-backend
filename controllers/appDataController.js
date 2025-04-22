@@ -15,9 +15,9 @@ exports.appLunch = async (req, res, next) => {
     const mosques = createMosqueObject(SQLmosques);
     res.status(200).json({ mosques, newUpdateDate });
   } catch (error) {
-    console.error(error);
-  } finally {
-  }
+    console.error("Error in appLunch",error);
+    next()
+  } 
 };
 
 //create routes
@@ -66,7 +66,9 @@ exports.checkForNewData = async (req, res, next) => {
       res.status(200).json({ mosques: [], user });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Error in checkForNewData",error);
+    return next("sdsad")
+
   }
 };
 

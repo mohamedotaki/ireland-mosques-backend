@@ -8,9 +8,9 @@ const createPost = async (post) => {
   try {
     const [result] = await pool.execute(
       `INSERT INTO posts 
-      (mosque_id, time, created_by, updated_by, contant) 
+      (mosque_id, time, created_by, updated_by, content) 
       VALUES (?, ?, ?, ?, ?)`,
-      [post.mosque_id, getNowLocal(), post.userID || null, null, post.contant]
+      [post.mosque_id, getNowLocal(), post.userID || null, null, post.content]
     );
     return result.insertId;
   } catch (error) {
@@ -44,8 +44,8 @@ const getPosts = async (offset, mosque_id) => {
 const updatePost = async (post, user) => {
   try {
     const [result] = await pool.execute(
-      `UPDATE mosques SET time =?, updated_by=?, contant=? WHERE post_id = ? AND  mosque_id = ?`,
-      [getNowLocal(), user.userID, post.contant, post.post_id, user.mosqueID]
+      `UPDATE posts SET time = ?, updated_by = ?, content = ? WHERE post_id = ? AND mosque_id = ?`,
+      [getNowLocal(), user.userID, post.content, post.post_id, user.mosqueID]
     );
     return result.affectedRows;
   } catch (error) {
@@ -71,4 +71,5 @@ module.exports = {
   createPost,
   getPosts,
   deletePost,
+  updatePost
 };
