@@ -16,13 +16,13 @@ exports.createPost = async (req, res, next) => {
 
 exports.getPost = async (req, res, next) => {
   try {
-    const mosqueId = req.query.mosqueId ? parseInt(req.query.mosqueId) : null; // If mosqueId is provided, use it, else null.
+    const mosqueId = req.query.mosqueID ? parseInt(req.query.mosqueID) : null; // If mosqueId is provided, use it, else null.
     const page = parseInt(req.query.page) || 1; // Default to page 1 if no page param is provided.
-    const offset = (1 - 1) * 5; // Calculate the offset for pagination.
+    const offset = (page - 1) * 5; // Calculate the offset for pagination.
 
-    const posts = await Posts.getPosts(offset, mosqueId);
+    const { posts, totalPosts } = await Posts.getPosts(offset, mosqueId);
 
-    res.status(201).json({ posts });
+    res.status(201).json({ posts, totalPages: Math.ceil(totalPosts / 5) });
   } catch (error) {
     console.error(error);
   }

@@ -8,9 +8,9 @@ const createPost = async (post) => {
   try {
     const [result] = await pool.execute(
       `INSERT INTO posts 
-      (mosque_id, time, created_by, updated_by, content) 
-      VALUES (?, ?, ?, ?, ?)`,
-      [post.mosque_id, getNowLocal(), post.userID || null, null, post.content]
+      (mosque_id, create_time, created_by, content) 
+      VALUES (?, ?, ?, ?)`,
+      [post.mosque_id, getNowLocal(), post.userID, post.content]
     );
     return result.insertId;
   } catch (error) {
@@ -23,18 +23,30 @@ const getPosts = async (offset, mosque_id) => {
   try {
     // Build the SQL query based on the presence of mosqueId
     let query = "SELECT * FROM posts";
+    let countQuery = "SELECT COUNT(*) as total FROM posts ";
+
     let queryParams = [];
+    let countParams = [];
 
     if (mosque_id) {
-      query += " WHERE mosque_id = ?";
+      query += " WHERE mosque_id = ? OR mosque_id IS NULL";
+      countQuery += " WHERE mosque_id = ? OR mosque_id IS NULL";
       queryParams.push(mosque_id);
+      countParams.push(mosque_id);
     }
 
-    query += " ORDER BY time DESC LIMIT 5 OFFSET ?";
+    query += " ORDER BY create_time DESC LIMIT 5 OFFSET ?";
     queryParams.push(offset);
 
-    const [rows] = await pool.execute(query, queryParams);
-    return rows;
+    // Run both queries
+    const [posts] = await pool.execute(query, queryParams);
+    const [countResult] = await pool.execute(countQuery, countParams);
+    const totalPosts = countResult[0]?.total ?? 0;
+
+    return {
+      posts,
+      totalPosts,
+    };
   } catch (error) {
     console.error("Error retrieving mosque by ID:", error);
     throw new Error("Failed to retrieve mosque by ID.");
@@ -44,7 +56,7 @@ const getPosts = async (offset, mosque_id) => {
 const updatePost = async (post, user) => {
   try {
     const [result] = await pool.execute(
-      `UPDATE posts SET time = ?, updated_by = ?, content = ? WHERE post_id = ? AND mosque_id = ?`,
+      `UPDATE posts SET update_time = ?, updated_by = ?, content = ? WHERE post_id = ? AND mosque_id = ?`,
       [getNowLocal(), user.userID, post.content, post.post_id, user.mosqueID]
     );
     return result.affectedRows;
@@ -71,5 +83,5 @@ module.exports = {
   createPost,
   getPosts,
   deletePost,
-  updatePost
+  updatePost,
 };
