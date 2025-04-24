@@ -62,25 +62,17 @@ const getAllPrayers = async () => {
   }
 };
 
-const getAllPrayersByMosqueID = async (mosque_ids) => {
-  try {
-    const [rows] = await pool.execute(
-      "SELECT * FROM prayer_data where mosque_id = (?)",
-      [mosque_ids]
-    );
-    return rows;
-  } catch (error) {
-    console.error("Error retrieving prayers:", error);
-    throw new Error("Failed to retrieve prayers.");
-  }
-};
 //update adhan times
-const updateAdhan = async (time, updated_at, mosque_id, id, userID) => {
-  const [rows] = await pool.execute(
-    `UPDATE prayer_data SET adhan_time =? , adhan_modified_on=?,modified_by=? WHERE mosque_id = ? AND prayer_id = ? AND (adhan_locked IS NULL OR adhan_locked = FALSE)`,
-    [time, updated_at, userID, mosque_id, id]
-  );
-  return rows.affectedRows;
+const updateAdhan = async (time, updated_at, mosque_id, id, userID, offset) => {
+  if (time && offset) {
+    throw Error("You can set only fixed time or offset time");
+  } else {
+    const [rows] = await pool.execute(
+      `UPDATE prayer_data SET adhan_time =? ,adhan_offset=?, adhan_modified_on=?,modified_by=? WHERE mosque_id = ? AND prayer_id = ? AND (adhan_locked IS NULL OR adhan_locked = FALSE)`,
+      [time, offset, updated_at, userID, mosque_id, id]
+    );
+    return rows.affectedRows;
+  }
 };
 
 module.exports = {

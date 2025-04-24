@@ -33,7 +33,8 @@ exports.updatePrayerTime = async (req, res, next) => {
         getNowLocal(),
         mosqueID,
         prayerID,
-        user.userID
+        user.userID,
+        offset
       );
       if (updated) {
         return res.status(200).json({ message: "Adhan updated" });
