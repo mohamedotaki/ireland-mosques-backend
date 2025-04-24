@@ -56,6 +56,11 @@ router.post(
   authMiddleware.inputValidation,
   authController.signup
 );
+router.post(
+  "/resend-verification",
+  authMiddleware.verifyToken,
+  authController.resendVerification
+);
 
 router.post(
   "/signin",

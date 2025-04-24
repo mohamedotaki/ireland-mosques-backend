@@ -15,7 +15,12 @@ exports.verifyToken = (req, res, next) => {
         .json({ message: "Unauthorized. Please login", redirectTo: "/" });
     }
 
-    if (decoded.account_status !== "Active" && req.path !== "/verify") {
+    if (
+      decoded.account_status !== "Active" &&
+      req.path !== "/verify" &&
+      req.path !== "/resend-verification" &&
+      req.path !== "/signout"
+    ) {
       return res
         .status(403)
         .json({ message: `Your account is ${decoded.account_status}.` });
@@ -28,12 +33,11 @@ exports.verifyToken = (req, res, next) => {
 exports.inputValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    let message =""
-    errors.array().map((e,index)=>{
-      message += `${index+1}-${e.msg}\n`
-
-    })
-    return res.status(422).json({  message });
+    let message = "";
+    errors.array().map((e, index) => {
+      message += `${index + 1}-${e.msg}\n`;
+    });
+    return res.status(422).json({ message });
   } else {
     next();
   }

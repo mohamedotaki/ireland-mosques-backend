@@ -150,6 +150,27 @@ exports.signup = async (req, res, next) => {
   }
 };
 
+exports.resendVerification = async (req, res, next) => {
+  try {
+    const { user } = req.body;
+    const dbUser = await User.getUserByID(user.userID);
+    if (verificationCodes[dbUser.email]?.expiresAt > new Date()) {
+      return res
+        .status(400)
+        .json({ message: "Please wait 1 minute before resending code" });
+    }
+    sendVerificationCode(dbUser.email);
+    return res.status(200).json({
+      message: "Verification code was sent successfully.",
+    });
+  } catch (error) {
+    console.error("Error sending verification code", error);
+    return res
+      .status(500)
+      .json({ message: "Errror during resending verification code" });
+  }
+};
+
 /* exports.resendVerificationCode = async (req, res) => {
   const { user } = req.body;
   const dbUser = await User.getUser(user.email);

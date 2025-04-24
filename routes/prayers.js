@@ -40,10 +40,7 @@ const prayerChangeValidation = [
     const newPrayerTime = req.body.newPrayerTime;
 
     if (isIqamah === true || isIqamah === "true") {
-      if (
-        !newPrayerTime &&
-        (value === undefined || value === null || value === "")
-      ) {
+      if (!newPrayerTime && (value === undefined || value === "")) {
         throw new Error(
           "offset is required if isIqamah is true and newPrayerTime is not provided"
         );
