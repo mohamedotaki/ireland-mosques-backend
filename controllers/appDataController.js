@@ -4,7 +4,6 @@ const time_table = require("../timeTable/timeTable.json");
 const jwt = require("jsonwebtoken");
 const jwtSecretKey = process.env.key || "TestingKey";
 const { getNowLocal } = require("../utils/datetime");
-const { use } = require("../routes/mosques");
 const moment = require("moment-timezone");
 
 //create routes

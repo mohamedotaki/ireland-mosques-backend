@@ -46,6 +46,10 @@ exports.signin = async (req, res) => {
         mosqueID: dbUser.mosqueID,
         settings: JSON.parse(dbUser.settings),
       },
+      message:
+        UUID !== dbUser.UUID
+          ? "Verification code was sent successfully. Please check your email inbox or spam folder."
+          : "Successfully logged in",
     });
   } catch (error) {
     console.error("Error in Login", error);
