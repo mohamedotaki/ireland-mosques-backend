@@ -8,12 +8,12 @@ const authRoute = require("./routes/auth");
 const prayersRoute = require("./routes/prayers");
 const postsRoute = require("./routes/posts");
 const compression = require("compression");
-
 const cookieParser = require("cookie-parser");
 
 const app = express();
 app.use(compression());
 const port = process.env.PORT || 3001;
+const apiVersion = "v1";
 
 app.use(
   cors({
@@ -37,12 +37,19 @@ app.use("/api/auth", authRoute);
 app.use("/api/prayers", prayersRoute);
 app.use("/api/posts", postsRoute);
 
+app.get("/", (req, res) => {
+  res.send(apiVersion);
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
-  res.status(500).json({ message: "Internal Server Error: An unknown error occurred. Please try again later." });
+  res.status(500).json({
+    message:
+      "Internal Server Error: An unknown error occurred. Please try again later.",
+  });
 });
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.error(`Server running on port ${port}`);
 });

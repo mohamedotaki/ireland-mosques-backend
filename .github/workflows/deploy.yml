@@ -26,7 +26,6 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           USERNAME: ${{ secrets.CPANEL_USERNAME }}
           REMOTE_PATH: ${{ secrets.REMOTE_PATH }} # /home/user/backend
-          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           echo "$SSH_PRIVATE_KEY" > key.pem
           chmod 600 key.pem
@@ -40,10 +39,10 @@ jobs:
           fi
 
           # Upload backend source code
-          rsync -avz --delete-after -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" . $USERNAME@$SERVER_IP:$REMOTE_PATH
+          rsync -avz --delete-after -e "ssh -p 21098  -o StrictHostKeyChecking=no" . $USERNAME@$SERVER_IP:$REMOTE_PATH
 
           # Restart backend on server
-          ssh -p $SSH_PORT -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
+          ssh -p 21098  -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
 
             source /home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/14/bin/activate && cd /home/alottpil/irelandmuslimsapi.alotaki.com
             npm install --omit=dev
