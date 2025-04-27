@@ -41,20 +41,14 @@ jobs:
           # Upload backend source code
           rsync -avz --delete-after -e "ssh -p 21098  -o StrictHostKeyChecking=no" . $USERNAME@$SERVER_IP:$REMOTE_PATH
 
-          # Restart backend on server
-          ssh -p 21098  -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
+          # Stop Node.js app using CloudLinux command
+          ssh -p 21098 -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
+            cloudlinux-selector stop --json --interpreter nodejs --user alottpil --app-root /home/alottpil/irelandmuslimsapi.alotaki.com || true
+            echo "✅ Node.js app stopped"
+          ENDSSH
 
-            source /home/alottpil/nodevenv/irelandmuslimsapi.alotaki.com/14/bin/activate && cd /home/alottpil/irelandmuslimsapi.alotaki.com
-            npm install --omit=dev
-            pkill -f "node index.js" || true
-            nohup node index.js > out.log 2>&1 &
-            
-            # Check if the Node.js process is running
-            sleep 5  # Wait for a few seconds to allow the process to start
-            if pgrep -f "node index.js" > /dev/null; then
-              echo "✅ Node.js app successfully restarted"
-            else
-              echo "❌ Failed to start Node.js app"
-              exit 1
-            fi
+          # Start Node.js app using CloudLinux command
+          ssh -p 21098 -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << 'ENDSSH'
+            cloudlinux-selector start --json --interpreter nodejs --user alottpil --app-root /home/alottpil/irelandmuslimsapi.alotaki.com
+            echo "✅ Node.js app started"
           ENDSSH

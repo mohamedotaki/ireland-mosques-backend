@@ -13,7 +13,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 app.use(compression());
 const port = process.env.PORT || 3001;
-const apiVersion = "v1";
+const apiVersion = "v2";
 
 app.use(
   cors({
