@@ -19,7 +19,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://irelandmuslims.alotaki.com"
+        ? "https://mosqueapp.alotaki.com"
         : "http://localhost:3000",
     credentials: true,
   })
